@@ -44,23 +44,21 @@ if __name__ == '__main__':
     # Now let's use a new stop condition on the network.  This will check if the 'loss' value is less than 0.1
     class new_callback(tf.keras.callbacks.Callback):
         def on_epoch_end(self, epoch, logs={}): 
-            if (logs.get('loss')<0.0001):
+            if (logs.get('loss')<0.0025):
                 print("Loss bellow threshold ! ---- Stopping !")
                 self.model.stop_training = True
 
     callback = new_callback()
 
     grasas_model = Sequential()
-    grasas_model.add(Dense(250, input_dim=x_final.shape[1], activation='tanh'))
-    grasas_model.add(Dense(120, activation='tanh'))
-    grasas_model.add(Dense(50, activation='tanh'))
-    grasas_model.add(Dense(25, activation='tanh'))
-    grasas_model.add(Dense(5, activation='tanh'))
+    grasas_model.add(Dense(200, input_dim=x_final.shape[1], activation='tanh'))
+    grasas_model.add(Dense(100, activation='tanh'))
+    grasas_model.add(Dense(20, activation='tanh'))
+    grasas_model.add(Dense(10, activation='tanh'))
     grasas_model.add(Dense(1, activation='tanh'))
 
     grasas_model.compile(loss='mean_squared_error', optimizer='adam')
-    grasas_model.fit(x_final, y_final, batch_size=50, epochs=200000, callbacks=[callback])
-    print(x_final[0])
+    grasas_model.fit(x_final, y_final, epochs=200000, callbacks=[callback])
 
     for i in range(x_final.shape[0]):
         x_to_eval = (np.array([x[i]])-x_min)/(x_max-x_min)
@@ -101,7 +99,6 @@ if __name__ == '__main__':
 
     alcohol_model.compile(loss='mean_squared_error', optimizer='adam')
     alcohol_model.fit(x_final, y_final, batch_size=100, epochs=50000)
-    # print(x_final[0])
 
     for i in range(x_final.shape[0]):
         x_to_eval = (np.array([x[i]])-x_min)/(x_max-x_min)
@@ -169,11 +166,14 @@ if __name__ == '__main__':
     CATE2 = fixed_df.loc[(fixed_df[CALORIAS] > 1100) & (fixed_df[CALORIAS] <= 1700)]
     CATE3 = fixed_df.loc[fixed_df[CALORIAS] > 1700]
 
-    fig, (ax1) = plt.subplots(nrows=1, ncols=1, constrained_layout=True)
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, constrained_layout=True)
 
     ## Alcohol
     ax1.boxplot([CATE1[ALCOHOL], CATE2[ALCOHOL], CATE3[ALCOHOL]])
     ax1.set_xticklabels(['CATE1', 'CATE2', 'CATE3'], fontsize=12)
     ax1.set_title('Alcohol')
 
+    ax2.hist(x=fixed_df[CALORIAS], bins = "auto")
+    ax2.xlabel(CALORIAS)
+    ax2.ylabel('Frecuencia')
     plt.show()
