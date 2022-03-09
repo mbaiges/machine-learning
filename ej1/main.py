@@ -40,12 +40,15 @@ if __name__ == '__main__':
     y_final = (y-y_min)/(y_max-y_min)
 
     grasas_model = Sequential()
-    grasas_model.add(Dense(300, input_dim=x_final.shape[1], activation='tanh'))
-    grasas_model.add(Dense(10, activation='sigmoid'))
-    grasas_model.add(Dense(1, activation='relu'))
+    grasas_model.add(Dense(250, input_dim=x_final.shape[1], activation='tanh'))
+    grasas_model.add(Dense(120, activation='tanh'))
+    grasas_model.add(Dense(50, activation='tanh'))
+    grasas_model.add(Dense(25, activation='tanh'))
+    grasas_model.add(Dense(5, activation='tanh'))
+    grasas_model.add(Dense(1, activation='tanh'))
 
     grasas_model.compile(loss='mean_squared_error', optimizer='adam')
-    grasas_model.fit(x_final, y_final, batch_size=100, epochs=100000)
+    grasas_model.fit(x_final, y_final, batch_size=100, epochs=200000)
     print(x_final[0])
 
     for i in range(x_final.shape[0]):
@@ -54,12 +57,62 @@ if __name__ == '__main__':
         pred = pred*(y_max-y_min)+y_min
         print(f"{x[i]}\t{y[i]}\t{pred[0,0]}\t{abs(y[i] - pred[0,0])}")
 
-    x_to_eval = np.array([[37.90, 2334, 1]])
-    x_to_eval = (x_to_eval-x_min)/(x_max-x_min)
+    x_to_eval_raw = np.array([[37.90, 2334, 1]])
+    x_to_eval = (x_to_eval_raw-x_min)/(x_max-x_min)
     pred = grasas_model.predict(x_to_eval)
+    print(f"{x_to_eval_raw} -> {pred*(y_max-y_min)+y_min}")
 
-    print(x_to_eval*(x_max-x_min)+x_min)
-    print(pred*(y_max-y_min)+y_min)
+
+    # alcohol_data = filtered_df.to_numpy()
+    # alcohol_data[alcohol_data == 'F'] = 0
+    # alcohol_data[alcohol_data == 'M'] = 1
+    # alcohol_data = np.array(alcohol_data, dtype=np.float64)
+
+    # y = alcohol_data[:,1]
+    # y_mean = np.mean(y, axis=0)
+    # y_std = np.std(y, axis=0)
+    # y_min = np.min(y, axis=0)
+    # y_max = np.max(y, axis=0)
+    # x = alcohol_data[:,[0,2,3]]
+    # x_mean = np.mean(x, axis=0)
+    # x_std = np.std(x, axis=0)
+    # x_min = np.min(x, axis=0)
+    # x_max = np.max(x, axis=0)
+
+    # x_final = (x-x_min)/(x_max-x_min)
+    # y_final = (y-y_min)/(y_max-y_min)
+
+    # alcohol_model = Sequential()
+    # alcohol_model.add(Dense(100, input_dim=x_final.shape[1], activation='tanh'))
+    # alcohol_model.add(Dense(50, activation='tanh'))
+    # alcohol_model.add(Dense(25, activation='tanh'))
+    # alcohol_model.add(Dense(5, activation='tanh'))
+    # alcohol_model.add(Dense(1, activation='tanh'))
+
+    # alcohol_model.compile(loss='mean_squared_error', optimizer='adam')
+    # alcohol_model.fit(x_final, y_final, batch_size=100, epochs=50000)
+    # # print(x_final[0])
+
+    # for i in range(x_final.shape[0]):
+    #     x_to_eval = (np.array([x[i]])-x_min)/(x_max-x_min)
+    #     pred = alcohol_model.predict(x_to_eval)
+    #     pred = pred*(y_max-y_min)+y_min
+    #     print(f"{x[i]}\t{y[i]}\t{pred[0,0]}\t{abs(y[i] - pred[0,0])}")
+
+    # x_to_eval_raw = np.array([[36.31, 1000, 0]])
+    # x_to_eval = (x_to_eval_raw-x_min)/(x_max-x_min)
+    # pred = alcohol_model.predict(x_to_eval)
+    # print(f"{x_to_eval_raw} -> {pred*(y_max-y_min)+y_min}")
+
+    # x_to_eval_raw = np.array([[41.01, 800, 0]])
+    # x_to_eval = (x_to_eval_raw-x_min)/(x_max-x_min)
+    # pred = alcohol_model.predict(x_to_eval)
+    # print(f"{x_to_eval_raw} -> {pred*(y_max-y_min)+y_min}")
+
+    # x_to_eval_raw = np.array([[27.08, 2054, 1]])
+    # x_to_eval = (x_to_eval_raw-x_min)/(x_max-x_min)
+    # pred = alcohol_model.predict(x_to_eval)
+    # print(f"{x_to_eval_raw} -> {pred*(y_max-y_min)+y_min}")
 
     # # 2. Boxplots
     # fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, constrained_layout=True)
