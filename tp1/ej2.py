@@ -40,7 +40,7 @@ if __name__ == '__main__':
     summary = []
 
     for i, cat in enumerate(t):
-        summary.append([sets[i], cat.lower()])
+        summary.append([sets[i], str(cat).lower()])
 
     out_file = open("summary.json", "w")
     json.dump(summary, out_file)
