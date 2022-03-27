@@ -1,7 +1,5 @@
 import re
 
-from sklearn import pipeline
-
 def lower(w):
     return w.lower()
 
