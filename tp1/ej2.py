@@ -44,12 +44,7 @@ def select_categories(df):
     #         df.drop(index, inplace=True)
 
 ## Returns (shuffled bag, shuffled t), idx where test set starts, median error for k, error for best case
-RANDOM = random.Random(111)
 def cross_validation(bayes, bags, t, k=20):
-    shuffled_idxs = [i for i in range(len(bags))]
-    RANDOM.shuffle(shuffled_idxs)
-    bags = [bags[i] for i in shuffled_idxs]
-    t = [t[i] for i in shuffled_idxs]
     total = len(bags)
     amount = int(total/k)
     acum = 0
@@ -64,21 +59,19 @@ def cross_validation(bayes, bags, t, k=20):
             x_train = bags[0:i]
             t_train = t[0:i]
         else: 
-            x_test = bags[i:amount]
-            t_test = t[i:amount]
+            x_test = bags[i:i+amount]
+            t_test = t[i:i+amount]
             x_train = bags[0:i] + bags[i+amount:]
             t_train = t[0:i] + t[i+amount:]
         if len(set(t_test)) == len(set(t_train)) == len(CATEGORIES):
             print("Skipping")
             continue
-        print(x_test)
         err = bayes.train(x_train, t_train, x_test, t_test)
-        print(err)
         if(err < max_):
             max_ = err
             test_idx = i
         acum += err
-    return (bags, t), test_idx, acum / k, max_
+    return test_idx, acum / k, max_
 
 def confusion(bags, t, results):
     cats = CATEGORIES_LWR
@@ -197,6 +190,11 @@ def roc(bayes, bags, t, left=0, right=1, step=0.2):
 
     return r
 
+RANDOM = random.Random(111)
+def shuffle(bags, t):
+    shuffled_idxs = [i for i in range(len(bags))]
+    RANDOM.shuffle(shuffled_idxs)
+    return [bags[i] for i in shuffled_idxs], [t[i] for i in shuffled_idxs]
 
 if __name__ == '__main__':
 
@@ -223,18 +221,16 @@ if __name__ == '__main__':
 
     # Cross Validation
     CASES = 30
+    bags, t = shuffle(bags, t)
     best_err, t_idx, k = math.inf, 0, 0
     for i in range(2,CASES):
-        print(i)
-        (b_, t_), t_idx_, mean_err_, err_ = cross_validation(bayes, bags, t, i)
+        t_idx_, mean_err_, err_ = cross_validation(bayes, bags, t, i)
         print(f"Cross validation result for {i}: {mean_err_}, best case: {err_}")
         if(mean_err_ < best_err):
             best_err = mean_err_
-            bags = b_
-            t = t_
             t_idx = t_idx_
             k = i
-    print(f"Cross validation FINAL best result for {k}: {best_err}")
+    print(f"Cross validation FINAL best result for {k}: {best_err}, with idx={t_idx}")
     # With best configuration, we use testing lists from now on
 
     # bags_testing, t_testing = ...
