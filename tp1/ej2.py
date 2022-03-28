@@ -156,8 +156,8 @@ def metrics(bags, t, results, alpha=0):
     return ret
 
 
-ROC_COLORS = ['r', 'g', 'b', 'y', 'o', 'p']
-def roc(bayes, bags, t, left=0, right=1, step=0.2):
+ROC_COLORS = ['red', 'green', 'blue', 'yellow', 'orange', 'pink']
+def roc(bayes, bags, t, start=0, stop=1, step=0.2):
     categories = CATEGORIES_LWR
     
     r = {}
@@ -165,17 +165,21 @@ def roc(bayes, bags, t, left=0, right=1, step=0.2):
     ys = {}
 
     for cat in categories:
-        xs[cat] = []
-        ys[cat] = []
+        xs[cat] = [1]
+        ys[cat] = [1]
 
     # Evaluating with different alphas
-    for alpha in range(left, right, step):
+    for alpha in np.arange(start, stop, step):
         results = bayes.eval(bags)
         m = metrics(bags, t, results, alpha=alpha)
         for cat, mc in m.items():
-            xs[cat].append(mc.fpr())
-            ys[cat].append(mc.tpr())
+            xs[cat].append(mc.false_positive_rate())
+            ys[cat].append(mc.true_positive_rate())
         r[alpha] = m
+
+    for cat in categories:
+        xs[cat].append(0)
+        ys[cat].append(0)
 
     # Plotting
     plt.ylabel('True Positive Rate')
@@ -184,6 +188,7 @@ def roc(bayes, bags, t, left=0, right=1, step=0.2):
     for i, cat in enumerate(categories):
         x = xs[cat]
         y = ys[cat]
+        plt.scatter(x[1:-1], y[1:-1], c=ROC_COLORS[i % len(categories)])
         plt.plot(x, y, ROC_COLORS[i % len(categories)], label=cat)
 
     plt.show()
@@ -244,8 +249,8 @@ if __name__ == '__main__':
 
     ## Metrics
     print("Metrics results:")
-    metrics = metrics(bags, t, results)
-    print(metrics)
+    met = metrics(bags, t, results)
+    print(met)
 
     ## ROC curve
-    roc(bayes, bags, t)
+    roc(bayes, bags, t, step=0.1)
