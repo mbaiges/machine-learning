@@ -1,9 +1,12 @@
 from hashlib import new
+from random import Random
 import seaborn as sn
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import json
+import random
+import math
 
 from bayes_2 import Naive
 from words import normalize
@@ -40,12 +43,18 @@ def select_categories(df):
     #     if str(row[CATEGORIA]).lower() in CATEGORIES:
     #         df.drop(index, inplace=True)
 
+## Returns (shuffled bag, shuffled t), idx where test set starts, median error for k, error for best case
+RANDOM = random.Random(111)
 def cross_validation(bayes, bags, t, k=20):
+    shuffled_idxs = [i for i in range(len(bags))]
+    RANDOM.shuffle(shuffled_idxs)
+    bags = [bags[i] for i in shuffled_idxs]
+    t = [t[i] for i in shuffled_idxs]
     total = len(bags)
     amount = int(total/k)
-    i = 0
     acum = 0
     new_total = total
+    max_, test_idx = math.inf, 0
     if total % amount != 0:
         new_total -= amount ## in order to add extra cases to last test set
     for i in range(0, new_total, amount):
@@ -59,8 +68,12 @@ def cross_validation(bayes, bags, t, k=20):
             t_test = t[i:amount]
             x_train = bags[0:i] + bags[i+amount:]
             t_train = t[0:i] + t[i+amount:]
-        acum += bayes.train(x_train, t_train, x_test, t_test)
-    return acum / k
+        err = bayes.train(x_train, t_train, x_test, t_test)
+        if(err < max_):
+            max_ = err
+            test_idx = i
+        acum += err
+    return (bags, t), test_idx, acum / k, max_
 
 def confusion(bags, t, results):
     cats = CATEGORIES_LWR
@@ -165,8 +178,19 @@ if __name__ == '__main__':
     print(results)
 
     # Cross Validation
-    res = cross_validation(bayes, bags, t)
-    print(f"Cross validation result: {res}")
+    CASES = 30
+    best_err, t_idx, k = math.inf, 0, 0
+    for i in range(2,CASES):
+        print(i)
+        (b_, t_), t_idx_, mean_err_, err_ = cross_validation(bayes, bags, t, i)
+        print(f"Cross validation result for {i}: {mean_err_}, best case: {err_}")
+        if(mean_err_ < best_err):
+            best_err = mean_err_
+            bags = b_
+            t = t_
+            t_idx = t_idx_
+            k = i
+    print(f"Cross validation FINAL best result for {k}: {best_err}")
     # With best configuration, we use testing lists from now on
 
     # bags_testing, t_testing = ...
