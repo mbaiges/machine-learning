@@ -52,9 +52,16 @@ class Naive:
         self.cond_probs = cond_probs
         self.t_counts = t_counts
 
-        #TODO: return error
-        err = 0
-        return err
+        ret = None
+        if x_test:
+            err = 0
+            results = self.eval(x_test)
+            for res, expected in zip(results, t_test):
+                cat = res[0]
+                if(res != expected):
+                    err += 1
+            ret = err/len(x_test)
+        return ret
 
     def eval(self, entries):
         t_probs = self.t_probs

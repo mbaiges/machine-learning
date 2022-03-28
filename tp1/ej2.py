@@ -68,7 +68,12 @@ def cross_validation(bayes, bags, t, k=20):
             t_test = t[i:amount]
             x_train = bags[0:i] + bags[i+amount:]
             t_train = t[0:i] + t[i+amount:]
+        if len(set(t_test)) == len(set(t_train)) == len(CATEGORIES):
+            print("Skipping")
+            continue
+        print(x_test)
         err = bayes.train(x_train, t_train, x_test, t_test)
+        print(err)
         if(err < max_):
             max_ = err
             test_idx = i
@@ -106,7 +111,7 @@ class Metrics():
         return (self.tp + self.fn) / (self.tp + self.tn + self.fp + self.fn)
 
     def precision(self):
-        return self.tp / (self.tp + self.fp)
+        return self.tp / (self.tp + self.fp) if (self.tp + self.fp) != 0 else 0
 
     def true_positive_rate(self):
         return self.tp / (self.tp + self.fn)
@@ -118,13 +123,13 @@ class Metrics():
         return 2 * self.precision() * self.true_positive_rate() / (self.precision() + self.true_positive_rate())
 
     def __str__(self):
-        return self.__repr__(self)
+        return self.__repr__()
 
     def __repr__(self):
         return "{" + f"acc: {self.accuracy()}, prec: {self.precision()}, tpr: {self.true_positive_rate()}, fpr: {self.false_positive_rate()}, f1s: {self.f1_score()}" + "}"
 
 
-def metrics(bags, t, results):
+def metrics(bags, t, results, alpha=0):
     cats = CATEGORIES_LWR
     ret = {}
 
@@ -142,17 +147,56 @@ def metrics(bags, t, results):
         fn = 0
 
         for idx, (pred_t, prob) in enumerate(results):
-            if pred_t == cat and t == cat:
-                tp += 1
-            elif pred_t == cat and t != cat:
-                fp += 1
-            elif pred_t != cat and t == cat:
-                fn += 1
-            else: # pred_t != cat and t != cat
-                tn += 1
+            ti = t[idx]
+            if pred_t == cat and prob > alpha:
+                if ti == cat:
+                    tp += 1
+                else: # ti != cat
+                    fp += 1
+            else:
+                if ti == cat:
+                    fn += 1
+                else: # ti != cat
+                    tn += 1
 
         ret[cat] = Metrics(tp=tp, tn=tn, fp=fp, fn=fn)
     return ret
+
+
+ROC_COLORS = ['r', 'g', 'b', 'y', 'o', 'p']
+def roc(bayes, bags, t, left=0, right=1, step=0.2):
+    categories = CATEGORIES_LWR
+    
+    r = {}
+    xs = {}
+    ys = {}
+
+    for cat in categories:
+        xs[cat] = []
+        ys[cat] = []
+
+    # Evaluating with different alphas
+    for alpha in range(left, right, step):
+        results = bayes.eval(bags)
+        m = metrics(bags, t, results, alpha=alpha)
+        for cat, mc in m.items():
+            xs[cat].append(mc.fpr())
+            ys[cat].append(mc.tpr())
+        r[alpha] = m
+
+    # Plotting
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+
+    for i, cat in enumerate(categories):
+        x = xs[cat]
+        y = ys[cat]
+        plt.plot(x, y, ROC_COLORS[i % len(categories)], label=cat)
+
+    plt.show()
+
+    return r
+
 
 if __name__ == '__main__':
 
@@ -206,5 +250,6 @@ if __name__ == '__main__':
     print("Metrics results:")
     metrics = metrics(bags, t, results)
     print(metrics)
+
     ## ROC curve
-    # roc(bags, t, results)
+    roc(bayes, bags, t)
