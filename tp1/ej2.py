@@ -121,7 +121,7 @@ class Metrics():
         return self.__repr__()
 
     def __repr__(self):
-        return "{" + f"acc: {self.accuracy()}, prec: {self.precision()}, tpr: {self.true_positive_rate()}, fpr: {self.false_positive_rate()}, f1s: {self.f1_score()}" + "}"
+        return "{" + f"acc: {self.accuracy():.3f}, prec: {self.precision():.3f}, tpr: {self.true_positive_rate():.3f}, fpr: {self.false_positive_rate():.3f}, f1s: {self.f1_score():.3f}" + "}"
 
 
 def metrics(bags, t, results, threshold=0):
@@ -246,9 +246,8 @@ if __name__ == '__main__':
     best_bayes.train(best_bags_train, best_t_train, best_bags_test, best_t_test)
 
     # Random evals
-    results = best_bayes.eval([bagify("Joan Laporta fue tajante sobre la relación que tiene con Messi y habló de una posible vuelta al Barcelona")])
+    results = best_bayes.eval([bagify("Polémica por la SUBE. Faltan tarjetas y se cobran precios exorbitantes: donde recomiendan comprarla")])
     print(Naive.get_most_probable_class(results))
-
     results = best_bayes.eval(best_bags_test)
 
     # With testing set
@@ -258,7 +257,7 @@ if __name__ == '__main__':
 
     ## Metrics
     print("Metrics results:")
-    met = metrics(best_bags_test, best_t_test, results)
+    met = metrics(best_bags_test, best_t_test, results, threshold=0.7)
     print(met)
 
     # ## ROC curve
