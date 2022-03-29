@@ -124,37 +124,27 @@ class Metrics():
         return "{" + f"acc: {self.accuracy()}, prec: {self.precision()}, tpr: {self.true_positive_rate()}, fpr: {self.false_positive_rate()}, f1s: {self.f1_score()}" + "}"
 
 
-def metrics(bags, t, results, alpha=0):
+def metrics(bags, t, results, threshold=0):
     cats = CATEGORIES_LWR
     ret = {}
 
-    # Gato, No Gato
-    
-    # --> Gato    <-- O_o No Gato o_O  => FN
-    # --> Gato    <-- O_o Gato    o_O  => TP
-    # --> No Gato <-- O_o Gato    o_O  => FP
-    # --> No Gato <-- O_o No Gato o_O  => TN
-
     for cat in cats:
-        tp = 0
-        tn = 0
-        fp = 0
-        fn = 0
+        ret[cat] = Metrics()
 
-        for idx, (pred_t, prob) in enumerate(results):
-            ti = t[idx]
-            if pred_t == cat and prob >= alpha:
+    for idx, result in enumerate(results):
+            for cat in cats:
+                prob = Naive.get_prob_for_class(result, cat)
+                ti = t[idx]
                 if ti == cat:
-                    tp += 1
-                else: # ti != cat
-                    fp += 1
-            else:
-                if ti == cat:
-                    fn += 1
-                else: # ti != cat
-                    tn += 1
-
-        ret[cat] = Metrics(tp=tp, tn=tn, fp=fp, fn=fn)
+                    if prob >= threshold:
+                        ret[ti].tp += 1
+                    else:
+                        ret[ti].fn += 1
+                else:
+                    if prob >= threshold:
+                        ret[cat].fp += 1
+                    else:
+                        ret[cat].tn += 1
     return ret
 
 
@@ -167,21 +157,21 @@ def roc(bags, t, results, start=0, stop=1, step=0.2):
     ys = {}
 
     for cat in categories:
-        xs[cat] = [1]
-        ys[cat] = [1]
+        xs[cat] = []
+        ys[cat] = []
 
     # Evaluating with different alphas
-    alphas = np.arange(start, stop, step)
-    for alpha in alphas:
-        m = metrics(bags, t, results, alpha=alpha)
+    thresholds = np.arange(start, stop+step, step)
+    for threshold in thresholds:
+        m = metrics(bags, t, results, threshold=threshold)
         for cat, mc in m.items():
             xs[cat].append(mc.false_positive_rate())
             ys[cat].append(mc.true_positive_rate())
-        r[alpha] = m
+        r[threshold] = m
 
-    for cat in categories:
-        xs[cat].append(0)
-        ys[cat].append(0)
+    # for cat in categories:
+    #     xs[cat].append(0)
+    #     ys[cat].append(0)
 
     # Plotting
     fig, ax = plt.subplots()
@@ -195,7 +185,7 @@ def roc(bags, t, results, start=0, stop=1, step=0.2):
         x = xs[cat]
         y = ys[cat]
         # print(f'{cat} - x: {x}, y: {y}')
-        ax.scatter(x[1:-1], y[1:-1], c=ROC_COLORS[i % len(categories)])
+        ax.scatter(x, y, c=ROC_COLORS[i % len(categories)])
         # for i, alpha in enumerate(alphas):
         #     ax.annotate(f'{alpha:.1f}', (x[i], y[i]))
         ax.plot(x, y, ROC_COLORS[i % len(categories)], label=cat)
@@ -239,11 +229,11 @@ if __name__ == '__main__':
     # Cross Validation
     bayes = Naive()
 
-    MAX_K = 30
+    MAX_K = 35
     bags, t = shuffle(bags, t)
     best_err, k = math.inf, 0
     best_bags_train, best_t_train, best_bags_test, best_t_test = bags, t, [], []
-    for i in range(5,MAX_K+1,5):
+    for i in range(10,MAX_K+1,5):
         best_div, mean_err_, err_ = cross_validation(bayes, bags, t, i)
         print(f"Cross validation result for {i}: {mean_err_}, best case: {err_}")
         if(mean_err_ < best_err):
@@ -257,19 +247,19 @@ if __name__ == '__main__':
 
     # Random evals
     results = best_bayes.eval([bagify("Joan Laporta fue tajante sobre la relación que tiene con Messi y habló de una posible vuelta al Barcelona")])
-    print(results)
+    print(Naive.get_most_probable_class(results))
 
     results = best_bayes.eval(best_bags_test)
 
     # With testing set
     
     ## Draw confusion matrix
-    confusion = confusion(best_bags_test, best_t_test, results)
+    confusion = confusion(best_bags_test, best_t_test, Naive.get_most_probable_class(results))
 
     ## Metrics
     print("Metrics results:")
     met = metrics(best_bags_test, best_t_test, results)
     print(met)
 
-    ## ROC curve
+    # ## ROC curve
     roc(best_bags_test, best_t_test, results, step=0.1)

@@ -67,7 +67,7 @@ class Naive:
         ret = None
         if x_test:
             err = 0
-            results = self.eval(x_test)
+            results = Naive.get_most_probable_class(self.eval(x_test))
             for (cat, prob), expected in zip(results, t_test):
                 if cat != expected:
                     err += 1
@@ -86,6 +86,7 @@ class Naive:
             VNB_t = None
             VNB = - math.inf
             total_prob = 0
+            all_probs = {}
             for t in t_probs:
                 t_prob = t_probs[t]
                 prod = 1
@@ -105,11 +106,32 @@ class Naive:
                 prob = prod * t_prob
                 total_prob += prob
                 # print(total_prob)
-                if prod > VNB:
-                    VNB_t = t
-                    VNB = prob
+                all_probs[t] = prob
+                # if prod > VNB:
+                #     VNB_t = t
+                #     VNB = prob
             
-            results.append((VNB_t, VNB/total_prob)) 
+            for t in all_probs:
+                all_probs[t] = all_probs[t] / total_prob
+
+            results.append(all_probs) 
 
         return results
-        
+
+    @staticmethod
+    def get_prob_for_class(result, clazz):
+        return result[clazz]
+    
+    @staticmethod      
+    def get_most_probable_class(results):
+        ret = []
+        for result in results:
+            c, p = None, None
+            m = - math.inf
+            for clazz in result:
+                prob = Naive.get_prob_for_class(result, clazz)
+                if prob > m:
+                    c = clazz
+                    p = m = prob
+            ret.append((c, p))
+        return ret
