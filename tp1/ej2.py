@@ -186,8 +186,8 @@ def roc(bags, t, results, start=0, stop=1, step=0.2):
     # Plotting
     fig, ax = plt.subplots()
 
-    plt.ylabel('True Positive Rate')
-    plt.xlabel('False Positive Rate')
+    plt.ylabel('Tasa de Verdaderos Positivos')
+    plt.xlabel('Tasa de Falsos Positivos')
 
     ax.plot(np.array([0, 1]), np.array([0, 1]), 'k--')
 
