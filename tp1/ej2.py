@@ -63,7 +63,7 @@ def cross_validation(bayes, bags, t, k=20):
             t_test = t[i:i+amount]
             x_train = bags[0:i] + bags[i+amount:]
             t_train = t[0:i] + t[i+amount:]
-        if len(set(t_test)) == len(set(t_train)) == len(CATEGORIES):
+        if not (len(set(t_test)) == len(set(t_train)) == len(CATEGORIES)):
             print("Skipping")
             continue
         err = bayes.train(x_train, t_train, x_test, t_test)
@@ -157,7 +157,7 @@ def metrics(bags, t, results, alpha=0):
 
 
 ROC_COLORS = ['red', 'green', 'blue', 'yellow', 'orange', 'pink']
-def roc(bayes, bags, t, start=0, stop=1, step=0.2):
+def roc(bags, t, results, start=0, stop=1, step=0.2):
     categories = CATEGORIES_LWR
     
     r = {}
@@ -169,8 +169,8 @@ def roc(bayes, bags, t, start=0, stop=1, step=0.2):
         ys[cat] = [1]
 
     # Evaluating with different alphas
-    for alpha in np.arange(start, stop, step):
-        results = bayes.eval(bags)
+    alphas = np.arange(start, stop, step)
+    for alpha in alphas:
         m = metrics(bags, t, results, alpha=alpha)
         for cat, mc in m.items():
             xs[cat].append(mc.false_positive_rate())
@@ -182,14 +182,18 @@ def roc(bayes, bags, t, start=0, stop=1, step=0.2):
         ys[cat].append(0)
 
     # Plotting
+    fig, ax = plt.subplots()
+
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
 
     for i, cat in enumerate(categories):
         x = xs[cat]
         y = ys[cat]
-        plt.scatter(x[1:-1], y[1:-1], c=ROC_COLORS[i % len(categories)])
-        plt.plot(x, y, ROC_COLORS[i % len(categories)], label=cat)
+        ax.scatter(x[1:-1], y[1:-1], c=ROC_COLORS[i % len(categories)])
+        for i, alpha in enumerate(alphas):
+            ax.annotate(str(alpha), (x[i], y[i]))
+        ax.plot(x, y, ROC_COLORS[i % len(categories)], label=cat)
 
     plt.show()
 
@@ -237,9 +241,10 @@ if __name__ == '__main__':
             k = i
     print(f"Cross validation FINAL best result for {k}: {best_err}, with idx={t_idx}")
     # With best configuration, we use testing lists from now on
+    # best_bayes = ...
 
     # bags_testing, t_testing = ...
-    # results = bayes.eval(bags)
+    # results = best_bayes.eval(bags)
     results = bayes.eval(bags) ## Solución temporal
 
     # With testing set
@@ -253,4 +258,4 @@ if __name__ == '__main__':
     print(met)
 
     ## ROC curve
-    roc(bayes, bags, t, step=0.1)
+    roc(bags, t, results, step=0.1)
