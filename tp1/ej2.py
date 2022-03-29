@@ -103,7 +103,7 @@ class Metrics():
         self.fn = fn
     
     def accuracy(self):
-        return (self.tp + self.fn) / (self.tp + self.tn + self.fp + self.fn)
+        return (self.tp + self.tn) / (self.tp + self.tn + self.fp + self.fn)
 
     def precision(self):
         return self.tp / (self.tp + self.fp) if (self.tp + self.fp) != 0 else 0
