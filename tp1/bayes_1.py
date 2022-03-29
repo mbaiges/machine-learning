@@ -21,6 +21,10 @@ class Naive:
             ## Laplace Correction
             t_probs[t] = (t_counts[t] + 1) / (entries_total + t_total)
 
+        print("---------------- PROBS ----------------")
+        for class_, prob in t_probs.items():
+            print(f"P({class_}) = {prob}")
+        print("---------------------------------------")
         ## x conditional probabilities (x_name=x_i | T=t_i)
         ### {
         #   (x_name, x_i, t_i): prob,
@@ -41,6 +45,11 @@ class Naive:
             ## Laplace Correction
             cond_probs[prob_k] = (cond_probs[prob_k] + 1) / (t_counts[t] + 2)
 
+        print("---------------- COND PROBS ----------------")
+        for prob_k, prob in cond_probs.items():
+            (col_name, x, t) = prob_k
+            print(f"P({col_name} = {x} | class = {t}) = {prob}")
+        print("--------------------------------------------")
         # ## Transform
         # cond_probs_printeable = {}
 
