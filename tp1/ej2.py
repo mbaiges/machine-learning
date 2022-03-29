@@ -90,7 +90,7 @@ def confusion(bags, t, results):
     # plt.figure(figsize=(10,7))
     sn.set(font_scale=1.4) # for label size
     sn.heatmap(df_cm, annot=True, annot_kws={"size": 16}, cmap=sn.cm.rocket_r, fmt='d') # font size
-    plt.xticks(rotation=15)
+    plt.xticks(rotation=0)
     plt.show()
 
     return m
@@ -256,7 +256,7 @@ if __name__ == '__main__':
     best_bayes.train(best_bags_train, best_t_train, best_bags_test, best_t_test)
 
     # Random evals
-    results = best_bayes.eval([bagify("La guerra se cobra la vida de Maksym Kagal, campeón mundial de kickboxing")])
+    results = best_bayes.eval([bagify("Joan Laporta fue tajante sobre la relación que tiene con Messi y habló de una posible vuelta al Barcelona")])
     print(results)
 
     results = best_bayes.eval(best_bags_test)
