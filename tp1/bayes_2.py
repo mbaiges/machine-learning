@@ -68,9 +68,8 @@ class Naive:
         if x_test:
             err = 0
             results = self.eval(x_test)
-            for res, expected in zip(results, t_test):
-                cat = res[0]
-                if(res != expected):
+            for (cat, prob), expected in zip(results, t_test):
+                if cat != expected:
                     err += 1
             ret = err/len(x_test)
         return ret

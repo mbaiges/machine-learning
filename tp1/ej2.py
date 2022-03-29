@@ -34,7 +34,7 @@ def bagify(text):
         bag[w] += 1
     return bag
     
-CATEGORIES = ['Salud', 'Entretenimiento', 'Economia', 'Deportes', 'Ciencia y Tecnologia', 'Internacional']
+CATEGORIES = ['Salud', 'Entretenimiento', 'Economia', 'Deportes', 'Ciencia y Tecnologia', 'Internacional', 'Destacadas', 'Nacional']
 CATEGORIES_LWR = list(map(lambda c: c.lower(), CATEGORIES))
 
 def select_categories(df):
@@ -43,15 +43,17 @@ def select_categories(df):
     #     if str(row[CATEGORIA]).lower() in CATEGORIES:
     #         df.drop(index, inplace=True)
 
-## Returns (shuffled bag, shuffled t), idx where test set starts, median error for k, error for best case
+## Returns (best_x_train, best_t_train, best_x_test, best_t_test, median error for k, error for best case
 def cross_validation(bayes, bags, t, k=20):
     total = len(bags)
     amount = int(total/k)
     acum = 0
     new_total = total
-    max_, test_idx = math.inf, 0
+    max_ = math.inf
+    best_x_train, best_t_train, best_x_test, best_t_test  = None, None, None, None
     if total % amount != 0:
         new_total -= amount ## in order to add extra cases to last test set
+        k -= 1
     for i in range(0, new_total, amount):
         if(i + amount > new_total): ## in order to add extra cases to last test set
             x_test = bags[i:]
@@ -64,14 +66,14 @@ def cross_validation(bayes, bags, t, k=20):
             x_train = bags[0:i] + bags[i+amount:]
             t_train = t[0:i] + t[i+amount:]
         if not (len(set(t_test)) == len(set(t_train)) == len(CATEGORIES)):
-            print("Skipping")
+            print("Skipping at K: {k}, with i: {i}")
             continue
         err = bayes.train(x_train, t_train, x_test, t_test)
         if(err < max_):
             max_ = err
-            test_idx = i
+            best_x_train, best_t_train, best_x_test, best_t_test  = x_train, t_train, x_test, t_test
         acum += err
-    return test_idx, acum / k, max_
+    return (best_x_train, best_t_train, best_x_test, best_t_test), acum / k, max_
 
 def confusion(bags, t, results):
     cats = CATEGORIES_LWR
@@ -87,8 +89,8 @@ def confusion(bags, t, results):
     df_cm = pd.DataFrame(m, cats, cats)
     # plt.figure(figsize=(10,7))
     sn.set(font_scale=1.4) # for label size
-    sn.heatmap(df_cm, annot=True, annot_kws={"size": 16}) # font size
-    plt.xticks(rotation=70)
+    sn.heatmap(df_cm, annot=True, annot_kws={"size": 16}, cmap=sn.cm.rocket_r, fmt='d') # font size
+    plt.xticks(rotation=0)
     plt.show()
 
     return m
@@ -141,7 +143,7 @@ def metrics(bags, t, results, alpha=0):
 
         for idx, (pred_t, prob) in enumerate(results):
             ti = t[idx]
-            if pred_t == cat and prob > alpha:
+            if pred_t == cat and prob >= alpha:
                 if ti == cat:
                     tp += 1
                 else: # ti != cat
@@ -156,7 +158,7 @@ def metrics(bags, t, results, alpha=0):
     return ret
 
 
-ROC_COLORS = ['red', 'green', 'blue', 'yellow', 'orange', 'pink']
+ROC_COLORS = ['red', 'green', 'blue', 'yellow', 'orange', 'pink', 'black', 'purple']
 def roc(bags, t, results, start=0, stop=1, step=0.2):
     categories = CATEGORIES_LWR
     
@@ -190,10 +192,12 @@ def roc(bags, t, results, start=0, stop=1, step=0.2):
     for i, cat in enumerate(categories):
         x = xs[cat]
         y = ys[cat]
+        print(f'{cat} - x: {x}, y: {y}')
         ax.scatter(x[1:-1], y[1:-1], c=ROC_COLORS[i % len(categories)])
-        for i, alpha in enumerate(alphas):
-            ax.annotate(str(alpha), (x[i], y[i]))
+        # for i, alpha in enumerate(alphas):
+        #     ax.annotate(f'{alpha:.1f}', (x[i], y[i]))
         ax.plot(x, y, ROC_COLORS[i % len(categories)], label=cat)
+        ax.legend()
 
     plt.show()
 
@@ -213,6 +217,13 @@ if __name__ == '__main__':
     df = select_categories(df)
 
     bags = build_bags(df)
+    total_words = 0
+    s = set()
+    for b in bags:
+        for w in b:
+            total_words += 1
+        s.add(w)
+    print(f"Analyzing {len(bags)} news, containing a total of {total_words} words ({s} distinct)")
     t = list(map(lambda e: str(e[1]).lower(), df[CATEGORIA].items()))
 
     # summary = []
@@ -222,40 +233,41 @@ if __name__ == '__main__':
 
     # out_file = open("summary.json", "w")
     # json.dump(summary, out_file)
-    
-    bayes = Naive()
-    bayes.train(bags, t, [], [])
-    results = bayes.eval([bagify("Jair Bolsonaro recicla el discurso antiizquierdista en el inicio anticipado de su campaña por la reelección")])
-    print(results)
 
     # Cross Validation
-    CASES = 30
+    bayes = Naive()
+
+    MAX_K = 30
     bags, t = shuffle(bags, t)
-    best_err, t_idx, k = math.inf, 0, 0
-    for i in range(2,CASES):
-        t_idx_, mean_err_, err_ = cross_validation(bayes, bags, t, i)
+    best_err, k = math.inf, 0
+    best_bags_train, best_t_train, best_bags_test, best_t_test = bags, t, [], []
+    for i in range(5,MAX_K+1,5):
+        best_div, mean_err_, err_ = cross_validation(bayes, bags, t, i)
         print(f"Cross validation result for {i}: {mean_err_}, best case: {err_}")
         if(mean_err_ < best_err):
+            (best_bags_train, best_t_train, best_bags_test, best_t_test) = best_div
             best_err = mean_err_
-            t_idx = t_idx_
             k = i
-    print(f"Cross validation FINAL best result for {k}: {best_err}, with idx={t_idx}")
+    print(f"Cross validation FINAL result for {k}: {best_err}")
     # With best configuration, we use testing lists from now on
-    # best_bayes = ...
+    best_bayes = Naive()
+    best_bayes.train(best_bags_train, best_t_train, best_bags_test, best_t_test)
 
-    # bags_testing, t_testing = ...
-    # results = best_bayes.eval(bags)
-    results = bayes.eval(bags) ## Solución temporal
+    # Random evals
+    results = best_bayes.eval([bagify("Fruhvirtova, un talento adolescente contra el fenómeno Badosa")])
+    print(results)
+
+    results = best_bayes.eval(best_bags_test)
 
     # With testing set
     
     ## Draw confusion matrix
-    confusion = confusion(bags, t, results)
+    confusion = confusion(best_bags_test, best_t_test, results)
 
     ## Metrics
     print("Metrics results:")
-    met = metrics(bags, t, results)
+    met = metrics(best_bags_test, best_t_test, results)
     print(met)
 
     ## ROC curve
-    roc(bags, t, results, step=0.1)
+    roc(best_bags_test, best_t_test, results, step=0.1)
