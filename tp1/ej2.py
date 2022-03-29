@@ -34,7 +34,7 @@ def bagify(text):
         bag[w] += 1
     return bag
     
-CATEGORIES = ['Salud', 'Entretenimiento', 'Economia', 'Deportes', 'Ciencia y Tecnologia', 'Internacional', 'Destacadas', 'Nacional']
+CATEGORIES = ['Salud', 'Entretenimiento', 'Economia', 'Deportes', 'Ciencia y Tecnologia', 'Internacional', 'Nacional']
 CATEGORIES_LWR = list(map(lambda c: c.lower(), CATEGORIES))
 
 def select_categories(df):
@@ -90,7 +90,7 @@ def confusion(bags, t, results):
     # plt.figure(figsize=(10,7))
     sn.set(font_scale=1.4) # for label size
     sn.heatmap(df_cm, annot=True, annot_kws={"size": 16}, cmap=sn.cm.rocket_r, fmt='d') # font size
-    plt.xticks(rotation=0)
+    plt.xticks(rotation=15)
     plt.show()
 
     return m
@@ -188,6 +188,8 @@ def roc(bags, t, results, start=0, stop=1, step=0.2):
 
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
+
+    ax.plot(np.array([0, 1]), np.array([0, 1]), 'k--')
 
     for i, cat in enumerate(categories):
         x = xs[cat]
