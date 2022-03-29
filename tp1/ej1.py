@@ -15,8 +15,8 @@ if __name__ == '__main__':
 
     df = pd.read_csv(FILEPATH, sep=',')
     naive = Naive()
-    x_train = df.loc[:, df.columns != NACIONALIDAD];
-    naive.train(df.loc[:, df.columns != NACIONALIDAD], df.loc[:,NACIONALIDAD], pd.DataFrame.empty, pd.DataFrame.empty)
+    x_train = df.loc[:, df.columns != NACIONALIDAD]
+    naive.train(df.loc[:, df.columns != NACIONALIDAD], df.loc[:,NACIONALIDAD], None, None)
     
     data = [
         (1, 0, 1, 1, 0),

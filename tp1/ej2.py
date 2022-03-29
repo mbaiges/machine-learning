@@ -192,7 +192,7 @@ def roc(bags, t, results, start=0, stop=1, step=0.2):
     for i, cat in enumerate(categories):
         x = xs[cat]
         y = ys[cat]
-        print(f'{cat} - x: {x}, y: {y}')
+        # print(f'{cat} - x: {x}, y: {y}')
         ax.scatter(x[1:-1], y[1:-1], c=ROC_COLORS[i % len(categories)])
         # for i, alpha in enumerate(alphas):
         #     ax.annotate(f'{alpha:.1f}', (x[i], y[i]))
@@ -223,7 +223,7 @@ if __name__ == '__main__':
         for w in b:
             total_words += 1
         s.add(w)
-    print(f"Analyzing {len(bags)} news, containing a total of {total_words} words ({s} distinct)")
+    print(f"Analyzing {len(bags)} news, containing a total of {total_words} words ({len(s)} distinct)")
     t = list(map(lambda e: str(e[1]).lower(), df[CATEGORIA].items()))
 
     # summary = []
@@ -254,7 +254,7 @@ if __name__ == '__main__':
     best_bayes.train(best_bags_train, best_t_train, best_bags_test, best_t_test)
 
     # Random evals
-    results = best_bayes.eval([bagify("Fruhvirtova, un talento adolescente contra el fenómeno Badosa")])
+    results = best_bayes.eval([bagify("La guerra se cobra la vida de Maksym Kagal, campeón mundial de kickboxing")])
     print(results)
 
     results = best_bayes.eval(best_bags_test)
