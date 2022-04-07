@@ -103,7 +103,7 @@ class Metrics():
         self.fn = fn
     
     def accuracy(self):
-        return (self.tp + self.fn) / (self.tp + self.tn + self.fp + self.fn)
+        return (self.tp + self.tn) / (self.tp + self.tn + self.fp + self.fn)
 
     def precision(self):
         return self.tp / (self.tp + self.fp) if (self.tp + self.fp) != 0 else 0
@@ -147,6 +147,14 @@ def metrics(bags, t, results, threshold=0):
                         ret[cat].tn += 1
     return ret
 
+def auc(x, y):
+    x, y = x.copy(), y.copy()
+    x.reverse()
+    y.reverse()
+    a = 0
+    for i in range(len(x)-1):
+        a += (x[i+1] - x[i])*(y[i] + (y[i+1] - y[i])/2)
+    return a
 
 ROC_COLORS = ['red', 'green', 'blue', 'yellow', 'orange', 'pink', 'black', 'purple']
 def roc(bags, t, results, start=0, stop=1, step=0.2):
@@ -184,11 +192,13 @@ def roc(bags, t, results, start=0, stop=1, step=0.2):
     for i, cat in enumerate(categories):
         x = xs[cat]
         y = ys[cat]
+        a = auc(x,y)
+        print(f'AUC({cat}) = {a:.3f}')
         # print(f'{cat} - x: {x}, y: {y}')
         ax.scatter(x, y, c=ROC_COLORS[i % len(categories)])
         # for i, alpha in enumerate(alphas):
         #     ax.annotate(f'{alpha:.1f}', (x[i], y[i]))
-        ax.plot(x, y, ROC_COLORS[i % len(categories)], label=cat)
+        ax.plot(x, y, ROC_COLORS[i % len(categories)], label=f'{cat} (AUC={a:.3f})')
         ax.legend()
 
     plt.show()
