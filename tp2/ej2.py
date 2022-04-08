@@ -66,7 +66,7 @@ if __name__ == '__main__':
     ej_a(df)
     discretize(df)
     x, t = df_to_np(df, [WORD_COUNT, TITLE_SENTIMENT, SENTIMENT_VALUE], STAR_RATING)
-    knn = KNN()
+    knn = KNN(k=5)
     knn.load(x, t)
     res = knn.find([[3, 1, 2]])
     print(res)

@@ -39,10 +39,34 @@ class KNN:
             't': e['t']
         }, w))
 
+    def _most_frequents_for_k(self, target, w):
+        w = w[:self.k]
+        freq = {}
+        max = None
+        for e in w:
+            if e['t'] not in freq:
+                freq[e['t']] = 0
+            dist = 1
+            if self.weighted:
+                dist = np.sum(target - e['x'])**2
+                if dist == 0:
+                    dist = 1
+            freq[e['t']] += dist
+            if max == None or freq[e['t']] > freq[max]:
+                max = e['t']
+        return max, freq
+        
+        
     def find(self, x):
         res = []
         for e in x:
-            closest = self._closest(self.nx(np.array(e)))
+            e = np.array(e)
+            closest = self._closest(self.nx(e))
             # print(self._denorm_w(closest))
-            res.append(self._denorm_w(closest[:self.k]))
+            max, freqs = self._most_frequents_for_k(e, closest)
+            res.append((
+                max, 
+                freqs, 
+                self._denorm_w(closest[:self.k])    
+            ))
         return res
