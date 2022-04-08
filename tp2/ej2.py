@@ -24,8 +24,7 @@ def ej_a(df):
     plt.show()
 
 def discretize(df):
-    for idx, e in df.iterrows():
-        e[TITLE_SENTIMENT] = 1 if e[TITLE_SENTIMENT] == 'positive' else 0
+    df[TITLE_SENTIMENT] = df[TITLE_SENTIMENT].apply(lambda sentiment: 1 if sentiment == "positive" else 0) #TODO: estamos pisando NaNs
 
 def cross_validation_run(df):
     pass
@@ -66,8 +65,8 @@ if __name__ == '__main__':
     df = pd.read_csv(FILEPATH, sep=';')
     ej_a(df)
     discretize(df)
-    print(df)
     x, t = df_to_np(df, [WORD_COUNT, TITLE_SENTIMENT, SENTIMENT_VALUE], STAR_RATING)
     knn = KNN()
     knn.load(x, t)
-    knn.find([[3, 1, 2]])
+    res = knn.find([[3, 1, 2]])
+    print(res)

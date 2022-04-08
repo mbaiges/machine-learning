@@ -1,13 +1,10 @@
 import math
+import numpy as np
 
+## Norma orden 1
 def man(x, y):
-    d = 0
-    for i in range(0, len(x)):
-        d += math.abs(x[i] - y[i], 2)
-    return d
+    return np.linalg.norm(x - y, 1) 
     
+## Norma orden 2
 def euc(x, y):
-    d = 0
-    for i in range(0, len(x)):
-        d += math.pow(x[i] - y[i], 2)
-    return math.sqrt(d)
+    return np.linalg.norm(x - y) 
