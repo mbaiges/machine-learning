@@ -44,36 +44,36 @@ def select_categories(df):
     #         df.drop(index, inplace=True)
 
 ## Returns (best_x_train, best_t_train, best_x_test, best_t_test, median error for k, error for best case
-# def cross_validation(bayes, bags, t, k=20):
-#     total = len(bags)
-#     amount = int(total/k)
-#     acum = 0
-#     new_total = total
-#     max_ = math.inf
-#     best_x_train, best_t_train, best_x_test, best_t_test  = None, None, None, None
-#     if total % amount != 0:
-#         new_total -= amount ## in order to add extra cases to last test set
-#         k -= 1
-#     for i in range(0, new_total, amount):
-#         if(i + amount > new_total): ## in order to add extra cases to last test set
-#             x_test = bags[i:]
-#             t_test = t[i:]
-#             x_train = bags[0:i]
-#             t_train = t[0:i]
-#         else: 
-#             x_test = bags[i:i+amount]
-#             t_test = t[i:i+amount]
-#             x_train = bags[0:i] + bags[i+amount:]
-#             t_train = t[0:i] + t[i+amount:]
-#         if not (len(set(t_test)) == len(set(t_train)) == len(CATEGORIES)):
-#             print("Skipping at K: {k}, with i: {i}")
-#             continue
-#         err = bayes.train(x_train, t_train, x_test, t_test)
-#         if(err < max_):
-#             max_ = err
-#             best_x_train, best_t_train, best_x_test, best_t_test  = x_train, t_train, x_test, t_test
-#         acum += err
-#     return (best_x_train, best_t_train, best_x_test, best_t_test), acum / k, max_
+def cross_validation(bayes, bags, t, k=20):
+    total = len(bags)
+    amount = int(total/k)
+    acum = 0
+    new_total = total
+    max_ = math.inf
+    best_x_train, best_t_train, best_x_test, best_t_test  = None, None, None, None
+    if total % amount != 0:
+        new_total -= amount ## in order to add extra cases to last test set
+        k -= 1
+    for i in range(0, new_total, amount):
+        if(i + amount > new_total): ## in order to add extra cases to last test set
+            x_test = bags[i:]
+            t_test = t[i:]
+            x_train = bags[0:i]
+            t_train = t[0:i]
+        else: 
+            x_test = bags[i:i+amount]
+            t_test = t[i:i+amount]
+            x_train = bags[0:i] + bags[i+amount:]
+            t_train = t[0:i] + t[i+amount:]
+        if not (len(set(t_test)) == len(set(t_train)) == len(CATEGORIES)):
+            print("Skipping at K: {k}, with i: {i}")
+            continue
+        err = bayes.train(x_train, t_train, x_test, t_test)
+        if(err < max_):
+            max_ = err
+            best_x_train, best_t_train, best_x_test, best_t_test  = x_train, t_train, x_test, t_test
+        acum += err
+    return (best_x_train, best_t_train, best_x_test, best_t_test), acum / k, max_
 
 def confusion(bags, t, results):
     cats = CATEGORIES_LWR
