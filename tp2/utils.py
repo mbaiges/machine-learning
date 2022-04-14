@@ -1,3 +1,4 @@
+from itertools import count
 import numpy as np
 
 def df_to_np(df, x_columns, t_column):
@@ -21,3 +22,11 @@ def normalize(x):
         return norm_x * x_std + x_mean
 
     return nx(x), (nx, dx)
+
+def mode(x):
+    if not x:
+        return None
+    counts = {}
+    for e in x:
+        counts[e] = counts.get(e, 0) + 1
+    return max(counts, key=counts.get)

@@ -40,22 +40,37 @@ class KNN:
         }, w))
 
     def _most_frequents_for_k(self, target, w):
+        def update_method(curr, dist, only_zeros=False):
+            if only_zeros and dist == 0:
+                return curr + 1
+            elif only_zeros and dist != 0:
+                return curr
+            return curr + dist
         most_frequent_found = False
         k = self.k
+        only_zeros = False
+        freq = {}
+        max = None
+        max_n = 0
         while not most_frequent_found and k <= len(w):
             # Found most freq
-            freq = {}
+            freq.clear()
             max = None
             max_n = 0
             for e in w[:k]:
-                if e['t'] not in freq:
-                    freq[e['t']] = 0
+                # if e['t'] not in freq:
+                #     freq[e['t']] = 0
                 dist = 1
                 if self.weighted:
-                    dist = np.sum(target - e['x'])**2
-                    if dist == 0:
-                        dist = 1
-                freq[e['t']] += 1 / dist
+                    dist = euc(target, e['x'])**2
+                    if dist == 0 and not only_zeros:
+                        freq.clear()
+                        max = None
+                        max_n = 0
+                        only_zeros = True
+                f = update_method(freq.get(e['t'], 0), dist, only_zeros=only_zeros)
+                if f > 0 or not only_zeros:
+                    freq[e['t']] = f
                 if max == None or (max != e['t'] and freq[e['t']] >= freq[max]):
                     if max != None and freq[e['t']] == freq[max]:
                         max_n += 1
