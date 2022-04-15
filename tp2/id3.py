@@ -134,6 +134,7 @@ class ID3:
             obj_values = sorted(df[self.target_atr].unique())
             # print(obj_values)
             if len(obj_values) == 1: # TODO: Esto no hace que si después te paso de testing un conjunto que tiene otra clase, crashee porque no sepa que decir?
+                print("Found 1 D:")
                 return depth, Node(None, value=obj_values[0], depth=depth)
             max_gain = self._get_max_gain_att(df, pending)
             max_gain_attr = max_gain[0]
@@ -144,8 +145,9 @@ class ID3:
             # print(new_pending)
             # print(f"discarding attribute {max_gain[0]}:")
             new_pending.discard(max_gain_attr)
-            # print(new_pending)
-            # print("--------------------------------")
+            print(new_pending)
+            print(len(new_pending))
+            print("--------------------------------")
             max_child_depth = 0
             for value in atr_values:
                 stack.push(Stack.ValuedAttribute(max_gain_attr, value))
@@ -155,6 +157,7 @@ class ID3:
                     max_child_depth = child_depth
             return max_child_depth, Node(max_gain_attr, childs=childs, depth=depth)
         else:
+            print("Elegantly finishing")
             return depth, Node(None, value=self.s_mode(stack), depth=depth)
 
     def s_mode(self, stack: Stack) -> float:
@@ -164,8 +167,16 @@ class ID3:
     def _get_filtered_dataframe(self, stack: Stack) -> pd.DataFrame:
         p = stack.path()
         recorte = self.examples
+        print("------------------------------")
+        print(p)
+        print(recorte)
         for v_atr in p:
             recorte = recorte.loc[recorte[v_atr.name] == v_atr.value]
+            print(recorte)
+        print(recorte)
+        print("------------------------------")
+        if (len(p) == 4):
+            exit(0)
         return recorte
     
     def _generate_tree(self) -> None:
