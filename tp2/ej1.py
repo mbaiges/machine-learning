@@ -79,32 +79,44 @@ def discretize(df) -> None:
     x = df[DURATION_OF_CREDIT_MONTH]
     b = bins(x, alg='dist', options={'min': 0, 'dist': 6})
     print(f"{DURATION_OF_CREDIT_MONTH} - Bins: {b}")
-    df[DURATION_OF_CREDIT_MONTH].apply(lambda v: _discretize_with_bins(b, v))
+    df[DURATION_OF_CREDIT_MONTH] = df[DURATION_OF_CREDIT_MONTH].apply(lambda v: _discretize_with_bins(b, v))
 
     # Credit Amount
     x = df[CREDIT_AMOUNT]
-    b = bins(x, alg='perc', options={'n': 10})
+    b = bins(x, alg='perc', options={'n': 20})
     print(f"{CREDIT_AMOUNT} - Bins: {b}")
-    df[CREDIT_AMOUNT].apply(lambda v: _discretize_with_bins(b, v))
+    df[CREDIT_AMOUNT] = df[CREDIT_AMOUNT].apply(lambda v: _discretize_with_bins(b, v))
 
     # Age
     x = df[AGE]
-    b = bins(x, alg='perc', options={'n': 10})
+    b = bins(x, alg='perc', options={'n': 20})
     print(f"{AGE} - Bins: {b}")
-    df[AGE].apply(lambda v: _discretize_with_bins(b, v))
+    df[AGE] = df[AGE].apply(lambda v: _discretize_with_bins(b, v))
+
+def multiple_iterations(sample_size: int=500, n: int=1) -> tuple:
+    errors = []
+    for i in range(0, n):
+        (x_train, t_train), (x_test, t_test) = bootstrap_df(x, t, train_size=list_size, test_size=list_size)
+        id3 = ID3()
+        id3.load(x_train, t_train)
+        id3.repr_tree()
+        error = id3.eval(x_test, t_test)
+        errors.append(error)
+    return errors,
 
 if __name__ == '__main__':
     # Load dataset
     df = pd.read_csv(FILEPATH, sep=',')
-    x = df[ATTRIBUTES_NAMES]
-    t = df[T_NAME].to_frame()
-    print(f"Loaded {x.shape[0]} rows")
+    print(f"Loaded {df.shape[0]} rows")
 
     # Analyze
-    analysis(df)
+    # analysis(df)
 
     # Discretize
     discretize(df)
+
+    x = df[ATTRIBUTES_NAMES]
+    t = df[T_NAME].to_frame()
     
     # Train and test with bootstrap
     list_size = 500
@@ -113,3 +125,14 @@ if __name__ == '__main__':
 
     id3 = ID3()
     id3.load(x_train, t_train)
+    id3.repr_tree()
+    print(f"Max Depth: {id3.depth}")
+    print(f"Nodes: {id3.count_nodes()}")
+    results = id3.predict(x_test)
+    error = id3.eval(x_test, t_test)
+    print(f"Error: {error}")
+
+    # Multiple iterations
+    # errors, = multiple_iterations(n=10)
+    # print(errors)
+    # print(f"Mean: {np.mean(np.array(errors))}")

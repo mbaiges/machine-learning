@@ -1,5 +1,3 @@
-from itertools import count
-from matplotlib.ft2font import FIXED_WIDTH
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -28,7 +26,7 @@ def normalize(x: np.array) -> tuple:
     return nx(x), (nx, dx)
 
 def mode(x: Iterable[Union[int, float]]) -> Union[int, float]:
-    if not x:
+    if x.shape[0] == 0:
         return None
     counts = {}
     for e in x:
@@ -101,3 +99,18 @@ def bins(x: np.array, alg: str='diac', options: object={}) -> Iterable[Union[int
     else: # alg == 'diac'
         ret = _bins_diac(x, options)
     return ret
+
+# Strings
+
+def lreplace(s, old, new, occurrence):
+    li = s.lsplit(old, occurrence)
+    return new.join(li)
+
+def rreplace(s, old, new, occurrence):
+    li = s.rsplit(old, occurrence)
+    return new.join(li)
+
+def replace_at(s, pos, new_char):
+    temp = list(s)
+    temp[pos] = new_char
+    return "".join(temp)
