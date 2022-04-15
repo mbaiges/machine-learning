@@ -1,7 +1,27 @@
-import numpy as np
+import pandas as pd
+import copy
 
 def shannon_entropy(x) -> float:
     pass
+
+class Stack:
+
+    class ValuedAttribute:
+        def __init__(self, name: str, value: int) -> None:
+            self.name = name
+            self.value = value
+    
+    def __init__(self):
+        self.l = []
+
+    def push(self, e: ValuedAttribute) -> None:
+        self.l.append(e)
+    
+    def pop(self) -> ValuedAttribute:
+        return self.pop()
+
+    def path(self) -> list:
+        return copy.deepcopy(self.l)
 
 class Node:
 
@@ -29,7 +49,10 @@ class ID3:
         print("Generating tree")
         pass
 
-    def load(self, x: np.ndarray, t: np.ndarray) -> None:
+    def _find_most_gain_att(self, x: pd.DataFrame, t: pd.DataFrame) -> str:
+        pass
+
+    def load(self, x: pd.DataFrame, t: pd.DataFrame) -> None:
         self.x = x
         self.t = t
         self._generate_tree()
