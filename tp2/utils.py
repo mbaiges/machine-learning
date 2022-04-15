@@ -1,8 +1,11 @@
 from itertools import count
+from matplotlib.ft2font import FIXED_WIDTH
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+from typing import Iterable, Union
 
-def df_to_np(df, x_columns, t_column):
+def df_to_np(df: pd.DataFrame, x_columns: str, t_column: str) -> tuple:
     x = []
     t = []
     for idx, row in df.iterrows():
@@ -13,7 +16,7 @@ def df_to_np(df, x_columns, t_column):
         t.append(row[t_column])
     return np.array(x), np.array(t)
 
-def normalize(x):
+def normalize(x: np.array) -> tuple:
     x_mean = np.mean(x, axis=0)
     x_std = np.std(x, axis=0)
     
@@ -24,7 +27,7 @@ def normalize(x):
 
     return nx(x), (nx, dx)
 
-def mode(x):
+def mode(x: Iterable[Union[int, float]]) -> Union[int, float]:
     if not x:
         return None
     counts = {}
@@ -32,15 +35,69 @@ def mode(x):
         counts[e] = counts.get(e, 0) + 1
     return max(counts, key=counts.get)
 
-def bootstrap_df_build_sample(x: pd.DataFrame, t: pd.DataFrame, k: int=None):# Como se define que retorna tipo (pd.Dataframe, pd.Dataframe)
+def bootstrap_df_build_sample(x: pd.DataFrame, t: pd.DataFrame, k: int=None) -> tuple:# Como se define que retorna tipo (pd.Dataframe, pd.Dataframe)
     k = x.shape[0] if k is None else k
     indexes = np.random.randint(0, x.shape[0], size=k)
     x_columns = x.columns
+    t_columns = t.columns
     x_arr, t_arr = x.to_numpy(), t.to_numpy()
     x_ret, t_ret = np.array([x_arr[i] for i in indexes]), np.array([t_arr[i] for i in indexes])
-    return pd.DataFrame(x_ret, columns=x_columns), pd.DataFrame(t_ret)
+    return pd.DataFrame(x_ret, columns=x_columns), pd.DataFrame(t_ret, columns=t_columns)
 
-def bootstrap_df(x: pd.DataFrame, t: pd.DataFrame, train_size: int=None, test_size: int=None):
+def bootstrap_df(x: pd.DataFrame, t: pd.DataFrame, train_size: int=None, test_size: int=None) -> tuple:
     train_size = x.shape[0] if train_size is None else train_size
     test_size  = x.shape[0] if test_size is None else test_size
     return bootstrap_df_build_sample(x, t, train_size), bootstrap_df_build_sample(x, t, test_size)
+
+def iqr(x: np.array) -> Union[int, float]:
+    q75, q25 = np.percentile(x, [75 ,25])
+    return q75 - q25
+
+def hist(x: np.array, title: str) -> None:
+    plt.rcParams.update({'font.size': 22})
+    plt.title(label=title)
+    plt.hist(x, bins=bins(x, alg='diac'))
+    plt.show()
+
+# class BinningRule:
+#     class BinningRuleType(Enum):
+#         WIDTH  = "width"
+#         RANGES = "ranges"
+
+#     def __init__(self, type: BinningRuleType, data: object=None) -> None:
+#         self.type = type
+#         self.data = data
+
+def _bins_dist(x: np.array, options={}) -> Iterable[Union[int, float]]:
+    eps = 1e-4
+    step = options.get('dist', 1)
+    min = options.get('min', np.min(x))
+    max = options.get('max', np.max(x))
+    return np.arange(min, max + eps, step=step)
+
+def _bins_perc(x: np.array, options={}) -> Iterable[Union[int, float]]:
+    x = np.sort(x)
+    n = options.get('n', 1)
+    size = int(x.shape[0]/n)
+    bins = set()
+    for idx, e in enumerate(x):
+        if idx % size == 0:
+            bins.add(e)
+    if idx % size != 0:
+        bins.add(x[-1])
+    return sorted(bins)
+
+## https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
+def _bins_diac(x: np.array, options={}) -> Iterable[Union[int, float]]:
+    bins_width = int(2 * iqr(x) / x.shape[0]**(1/3))
+    return range(np.min(x), np.max(x) + bins_width, bins_width)
+
+def bins(x: np.array, alg: str='diac', options: object={}) -> Iterable[Union[int, float]]:
+    ret = None
+    if alg == 'perc':
+        ret = _bins_perc(x, options)
+    elif alg == 'dist':
+        ret = _bins_dist(x, options)
+    else: # alg == 'diac'
+        ret = _bins_diac(x, options)
+    return ret
