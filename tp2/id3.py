@@ -26,7 +26,7 @@ class Stack:
         self.l.append(e)
     
     def pop(self) -> ValuedAttribute:
-        return self.pop()
+        return self.l.pop()
 
     def path(self) -> list:
         return copy.deepcopy(self.l)
@@ -81,7 +81,7 @@ class ID3:
             childs = {}
             new_pending = copy.deepcopy(pending)
             # new_pending.discard(max_gain[0])
-            print(f"discarding: {new_pending.discard(max_gain[0])}")
+            print(f"discarding attribute {max_gain[0]}: {new_pending.discard(max_gain[0])}")
             print(new_pending)
             for value in atr_values:
                 stack.push(Stack.ValuedAttribute(max_gain[0], value))
