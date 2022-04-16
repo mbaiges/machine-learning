@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 np.random.seed(59076)
+print(f"Test random: {np.random.randint(0, 22)}")
 
 from utils import bootstrap_df, hist, bins, LoadingBar
 from id3 import ID3
@@ -85,13 +86,13 @@ def discretize(df) -> None:
 
     # Credit Amount
     x = df[CREDIT_AMOUNT]
-    b = bins(x, alg='perc', options={'n': 4})
+    b = bins(x, alg='perc', options={'n': 6})
     print(f"{CREDIT_AMOUNT} - Bins: {b}")
     df[CREDIT_AMOUNT] = df[CREDIT_AMOUNT].apply(lambda v: _discretize_with_bins(b, v))
 
     # Age
     x = df[AGE]
-    b = bins(x, alg='perc', options={'n': 4})
+    b = bins(x, alg='perc', options={'n': 6})
     print(f"{AGE} - Bins: {b}")
     df[AGE] = df[AGE].apply(lambda v: _discretize_with_bins(b, v))
 
@@ -123,7 +124,7 @@ def precision(metrics_map: object):
     fp = sum(map(lambda m: m.fp, metrics_map.values()))
     return tp/(tp+fp)
 
-def multiple_iterations(sample_size: int=500, n: int=1) -> tuple:
+def multiple_iterations(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=5, n: int=1) -> tuple:
     precisions = [] 
     errors = []
     loading_bar = LoadingBar()
@@ -173,6 +174,6 @@ if __name__ == '__main__':
     # print(f"Precision: {prec}")
 
     # Multiple iterations
-    precisions, errors = multiple_iterations(n=50)
+    precisions, errors = multiple_iterations(x, t, n=5)
     print(f"Mean Precision: {np.mean(precisions):.3f}")
     print(f"Mean Error: {np.mean(errors):.3f}")
