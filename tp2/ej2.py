@@ -68,7 +68,7 @@ def sanitize(df):
         regs = regs[regs[TITLE_SENTIMENT].notnull()]
         for text_sent in text_sentiments:
             rs = regs[regs[TEXT_SENTIMENT] == text_sent]
-            mo = mode(list(map(lambda i: i[1][TITLE_SENTIMENT], rs.iterrows())))
+            mo = mode(np.array(list(map(lambda i: i[1][TITLE_SENTIMENT], rs.iterrows()))))
             mo = mo if mo is not None else text_sent
             mode_by_stars_and_text_sent[(s, text_sent)] = mo
     
@@ -205,7 +205,7 @@ def confusion(all_results):
 
 def compare_weighted(x, t, min_k=1, max_k=200, step_k=4, iterations_per_k=4):
     # non_weighted
-    ks = list(range(min_k, max_k, step_k))
+    ks = list(range(min_k, max_k + step_k, step_k))
 
     non_weighted_precisions = []
     weighted_precisions     = []
@@ -261,5 +261,5 @@ if __name__ == '__main__':
     print(precision)
     confusion(all_results)
 
-    # compare_weighted(x, t, min_k=1, max_k=50, step_k=1, iterations_per_k=4)
+    compare_weighted(x, t, min_k=5, max_k=200, step_k=5, iterations_per_k=4)
     

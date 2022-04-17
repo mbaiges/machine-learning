@@ -45,7 +45,7 @@ class KNN:
                 return curr + 1
             elif only_zeros and dist != 0:
                 return curr
-            return curr + dist
+            return curr + 1 / dist
         most_frequent_found = False
         k = self.k
         only_zeros = False
@@ -69,14 +69,15 @@ class KNN:
                         max_n = 0
                         only_zeros = True
                 f = update_method(freq.get(e['t'], 0), dist, only_zeros=only_zeros)
+                # print(f"f is {f}")
                 if f > 0 or not only_zeros:
                     freq[e['t']] = f
-                if max == None or (max != e['t'] and freq[e['t']] >= freq[max]):
-                    if max != None and freq[e['t']] == freq[max]:
-                        max_n += 1
-                    else:
-                        max_n = 1
-                        max = e['t']
+                    if max == None or (max != e['t'] and freq[e['t']] >= freq[max]):
+                        if max != None and freq[e['t']] == freq[max]:
+                            max_n += 1
+                        else:
+                            max_n = 1
+                            max = e['t']
 
             # Check if there is a most_freq
             if max_n == 1:
@@ -102,8 +103,8 @@ class KNN:
     def find(self, x):
         res = []
         for e in x:
-            e = np.array(e)
-            closest = self._closest(self.nx(e))
+            e = self.nx(np.array(e))
+            closest = self._closest(e)
             # print(self._denorm_w(closest))
             max, probs, k = self._most_frequents_for_k(e, closest)
             res.append((
