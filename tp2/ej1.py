@@ -7,7 +7,10 @@ from utils import bootstrap_df, hist, bins, LoadingBar
 from id3 import ID3
 from models import Metrics
 
-FILEPATH                          = "german_credit.csv"
+
+########## DATA SET GERMAN CREDIT ##########
+DATASET_GERMAN_CREDIT             = "german_credit"
+FILEPATH_GERMAN_CREDIT            = "german_credit.csv"
 
 CREDITABILITY                     = "Creditability"
 ACCOUNT_BALANCE                   = "Account Balance"
@@ -31,29 +34,58 @@ NO_OF_DEPENDENTS                  = "No of dependents"
 TELEPHONE                         = "Telephone"
 FOREIGN_WORKER                    = "Foreign Worker"
 
-T_NAME = CREDITABILITY
-ATTRIBUTES_NAMES = [
-    ACCOUNT_BALANCE,
-    DURATION_OF_CREDIT_MONTH,
-    PAYMENT_STATUS_OF_PREVIOUS_CREDIT,
-    PURPOSE,
-    CREDIT_AMOUNT,
-    VALUE_SAVINGS_STOCKS,
-    LENGTH_OF_CURRENT_EMPLOYMENT,
-    INSTALMENT_PER_CENT,
-    SEX_AND_MARITAL_STATUS,
-    GUARANTORS,
-    DURATION_IN_CURRENT_ADDRESS,
-    MOST_VALUABLE_AVAILABLE_ASSET,
-    AGE,
-    CONCURRENT_CREDITS,
-    TYPE_OF_APARTMENT,
-    NO_OF_CREDITS_AT_THIS_BANK,
-    OCCUPATION,
-    NO_OF_DEPENDENTS,
-    TELEPHONE,
-    FOREIGN_WORKER
-]
+########## DATA SET JUEGA TENNIS ##########
+DATASET_TENNIS                    = "tennis"
+FILEPATH_TENNIS                   = "juega_tenis.csv"
+
+DIA                               = "Dia" 
+PRONOSTICO                        = "Pronostico"
+TEMPERATURA                       = "Temperatura"
+HUMEDAD                           = "Humedad"
+VIENTO                            = "Viento"
+JUEGA                             = "Juega"
+
+
+##### SET CONNSTANTS FOR DATASET #####
+DATASET = DATASET_TENNIS
+
+def filepath_for_dataset() -> str:
+    return FILEPATH_TENNIS if DATASET == DATASET_TENNIS else FILEPATH_GERMAN_CREDIT
+FILEPATH = filepath_for_dataset()
+
+def t_name_for_dataset() -> str:
+    return JUEGA if DATASET == DATASET_TENNIS else CREDITABILITY
+T_NAME = t_name_for_dataset()
+
+def attributes_names_for_dataset() -> str:
+    return [
+        PRONOSTICO,
+        TEMPERATURA,
+        HUMEDAD,
+        VIENTO
+    ] if DATASET == DATASET_TENNIS else [
+        ACCOUNT_BALANCE,
+        DURATION_OF_CREDIT_MONTH,
+        PAYMENT_STATUS_OF_PREVIOUS_CREDIT,
+        PURPOSE,
+        CREDIT_AMOUNT,
+        VALUE_SAVINGS_STOCKS,
+        LENGTH_OF_CURRENT_EMPLOYMENT,
+        INSTALMENT_PER_CENT,
+        SEX_AND_MARITAL_STATUS,
+        GUARANTORS,
+        DURATION_IN_CURRENT_ADDRESS,
+        MOST_VALUABLE_AVAILABLE_ASSET,
+        AGE,
+        CONCURRENT_CREDITS,
+        TYPE_OF_APARTMENT,
+        NO_OF_CREDITS_AT_THIS_BANK,
+        OCCUPATION,
+        NO_OF_DEPENDENTS,
+        TELEPHONE,
+        FOREIGN_WORKER
+    ]
+ATTRIBUTES_NAMES = attributes_names_for_dataset()
 
 def analysis(df: pd.DataFrame) -> None:
 
@@ -149,29 +181,36 @@ if __name__ == '__main__':
     # analysis(df)
 
     # Discretize
-    discretize(df)
+    if DATASET == DATASET_TENNIS:
+        x = df[ATTRIBUTES_NAMES]
+        t = df[T_NAME].to_frame()
+        id3 = ID3()
+        id3.load(x,t)
+        id3.repr_tree()
+    else:
+        discretize(df)
 
-    x = df[ATTRIBUTES_NAMES]
-    t = df[T_NAME].to_frame()
-    
-    # Train and test with bootstrap
-    list_size = 500
-    (x_train, t_train), (x_test, t_test) = bootstrap_df(x, t, train_size=list_size, test_size=list_size)
-    print(x_train)
+        x = df[ATTRIBUTES_NAMES]
+        t = df[T_NAME].to_frame()
+        
+        # Train and test with bootstrap
+        list_size = 500
+        (x_train, t_train), (x_test, t_test) = bootstrap_df(x, t, train_size=list_size, test_size=list_size)
+        print(x_train)
 
-    # id3 = ID3()
-    # id3.load(x, t)
-    # id3.repr_tree()
-    # print(f"Max Depth: {id3.depth}")
-    # print(f"Nodes: {id3.count_nodes()}")
-    # results = id3.predict(x_test)
-    # results, error = id3.eval(x_test, t_test)
-    # metrics_map = metrics(t_test[CREDITABILITY].to_numpy().tolist(), results)
-    # prec = precision(metrics_map)
-    # print(f"Error: {error}")
-    # print(f"Precision: {prec}")
+        # id3 = ID3()
+        # id3.load(x, t)
+        # id3.repr_tree()
+        # print(f"Max Depth: {id3.depth}")
+        # print(f"Nodes: {id3.count_nodes()}")
+        # results = id3.predict(x_test)
+        # results, error = id3.eval(x_test, t_test)
+        # metrics_map = metrics(t_test[CREDITABILITY].to_numpy().tolist(), results)
+        # prec = precision(metrics_map)
+        # print(f"Error: {error}")
+        # print(f"Precision: {prec}")
 
-    # Multiple iterations
-    precisions, errors = multiple_iterations(x, t, n=5)
-    print(f"Mean Precision: {np.mean(precisions):.3f}")
-    print(f"Mean Error: {np.mean(errors):.3f}")
+        # Multiple iterations
+        precisions, errors = multiple_iterations(x, t, n=5)
+        print(f"Mean Precision: {np.mean(precisions):.3f}")
+        print(f"Mean Error: {np.mean(errors):.3f}")
