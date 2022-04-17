@@ -35,6 +35,7 @@ def mode(x: Iterable[Union[int, float]]) -> Union[int, float]:
 
 def bootstrap_df_build_sample(x: pd.DataFrame, t: pd.DataFrame, k: int=None) -> tuple:# Como se define que retorna tipo (pd.Dataframe, pd.Dataframe)
     k = x.shape[0] if k is None else k
+    np.random.seed(59076) # makes shuffle predactible
     indexes = np.random.randint(0, x.shape[0], size=k)
     x_columns = x.columns
     t_columns = t.columns

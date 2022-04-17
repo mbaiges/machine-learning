@@ -2,8 +2,6 @@ from typing import Iterable, Union
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-np.random.seed(59076)
-print(f"Test random: {np.random.randint(0, 22)}")
 
 from utils import bootstrap_df, hist, bins, LoadingBar
 from id3 import ID3
