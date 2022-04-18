@@ -25,13 +25,17 @@ def normalize(x: np.array) -> tuple:
 
     return nx(x), (nx, dx)
 
-def mode(x: Iterable[Union[int, float]]) -> Union[int, float]:
+def mode(x: np.array) -> np.array:
     if x.shape[0] == 0:
         return None
     counts = {}
     for e in x:
         counts[e] = counts.get(e, 0) + 1
     return max(counts, key=counts.get)
+
+# def mode(x: np.array, axis: int=None) -> np.array:
+#     print(x)
+#     return stats.mode(x, axis=axis).mode
 
 def bootstrap_df_build_sample(x: pd.DataFrame, t: pd.DataFrame, k: int=None) -> tuple:# Como se define que retorna tipo (pd.Dataframe, pd.Dataframe)
     k = x.shape[0] if k is None else k

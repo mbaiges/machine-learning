@@ -22,7 +22,7 @@ class Stack:
             self.value = value
 
         def __repr__(self):
-            return "{" + f"name:{self.name}, value:{self.value}" + "}"
+            return "(" + f"{self.name.upper()}={self.value}" + ")"
     
         def __str__(self):
             return self.__repr__()
@@ -68,14 +68,19 @@ class Node:
         return len(self.childs.keys()) == 0 and self.value is not None
 
     def __repr__(self):
-        return "{" + f"att:{self.name}, value:{self.value}" + "}"
+        s = ""
+        if self.is_leaf():
+            s = "<" + f"{self.value}" + ">"
+        else:
+            s = ":" + f"{self.name.upper()}" + ":"
+        return s
 
     def __str__(self):
         return self.__repr__()
 
     def text_repr(self, att_value: str, prefix: str, remove_at_pos: int=None):
         b = prefix + f"({att_value if att_value is not None else ''})" + self.__str__() + "\n"
-        if remove_at_pos is not None:
+        if remove_at_pos is not None and remove_at_pos < len(prefix)-1:
             prefix = replace_at(prefix, remove_at_pos, ' ')
             remove_at_pos = None
         # print(f"Visiting node: {self}")
@@ -128,7 +133,6 @@ class ID3:
         return max_gain
 
     def _generate_node(self, stack: Stack, pending: set, depth: int) -> tuple:
-        # print(f"[{depth}] Stack: {stack.path()}")
         if pending and (self.max_depth is None or depth < self.max_depth):
             df = self._get_filtered_dataframe(stack) 
             obj_values = sorted(df[self.target_atr].unique())
@@ -151,13 +155,12 @@ class ID3:
             max_child_depth = 0
             for value in atr_values:
                 stack.push(Stack.ValuedAttribute(max_gain_attr, value))
-                child_depth, childs[value] = self._generate_node(stack, new_pending, depth+1)
+                child_depth, childs[value] = self._generate_node(stack, new_pending, depth=depth+1)
                 stack.pop()
                 if child_depth > max_child_depth:
                     max_child_depth = child_depth
             return max_child_depth, Node(max_gain_attr, childs=childs, depth=depth)
         else:
-            print("Elegantly finishing")
             return depth, Node(None, value=self.s_mode(stack), depth=depth)
 
     def s_mode(self, stack: Stack) -> float:
@@ -187,7 +190,7 @@ class ID3:
         self.x = x
         self.t = t
         self.target_atr = self.t.columns[0]
-        self._generate_tree()   
+        self._generate_tree()
 
     def predict(self, x: pd.DataFrame) -> Iterable[Union[int, float]]:
         ret = []
@@ -211,9 +214,12 @@ class ID3:
         return self.tree.text_repr(None, "", remove_at_pos=None)
     
     def print_tree(self):
-        print("Tree Representation")
+        print(f"Tree Representation n={self.count_nodes()}")
         print(self.repr_tree())
-        print(f"Final Depth {self.depth}")
+        print(f"Final Depth {self.count_real_depth()}")
 
     def count_nodes(self):
         return 1 + self.tree.count_childs()
+
+    def count_real_depth(self):
+        return self.depth*2 + 1
