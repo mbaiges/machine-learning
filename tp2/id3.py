@@ -8,10 +8,10 @@ from utils import mode, replace_at
 
 def shannon_entropy(df: pd.DataFrame, atr: str) -> float:
     atr_values = sorted(df[atr].unique())
-    total = df.size
+    total = df.shape[0]
     entropy = 0
     for v in atr_values:
-        rel_freq = df.loc[df[atr] == v].size / total
+        rel_freq = df.loc[df[atr] == v].shape[0] / total
         entropy -=  rel_freq * math.log(rel_freq, 2)
     return entropy
 
@@ -112,18 +112,18 @@ class ID3:
 
     def gain(self, df: pd.DataFrame, atr: str) -> float:
         gain = self.gain_method(df, self.target_atr)
-        total = df.size
+        total = df.shape[0]
         atr_values = sorted(df[atr].unique())
 
         for value in atr_values:
-            gain -= (df.loc[df[atr] == value].size / total) * self.gain_method(df.loc[df[atr] == value], self.target_atr)
+            gain -= (df.loc[df[atr] == value].shape[0] / total) * self.gain_method(df.loc[df[atr] == value], self.target_atr)
         return gain
         
     def _get_max_gain_att(self, df: pd.DataFrame, attrs: set):
         max_gain = None
         for atr in attrs:
             gain = self.gain(df, atr)
-            if max_gain is None or gain > max_gain[1]:
+            if max_gain is None or (gain > max_gain[1] or (gain == max_gain[1] and atr < max_gain[0])):
                 max_gain = (atr, gain)
         return max_gain
 
@@ -208,8 +208,11 @@ class ID3:
         return results, err
 
     def repr_tree(self):
+        return self.tree.text_repr(None, "", remove_at_pos=None)
+    
+    def print_tree(self):
         print("Tree Representation")
-        print(self.tree.text_repr(None, "", remove_at_pos=None))
+        print(self.repr_tree())
         print(f"Final Depth {self.depth}")
 
     def count_nodes(self):

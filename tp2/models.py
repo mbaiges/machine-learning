@@ -24,4 +24,4 @@ class Metrics():
         return self.__repr__()
 
     def __repr__(self):
-        return "{" + f"acc: {self.accuracy():.3f}, prec: {self.precision():.3f}, tpr: {self.true_positive_rate():.3f}, fpr: {self.false_positive_rate():.3f}, f1s: {self.f1_score():.3f}" + "}"
+        return "{" + f"acc: {self.accuracy():.3f}, prec: {self.precision():.3f}" + "}"
