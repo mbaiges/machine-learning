@@ -57,12 +57,18 @@ class Node:
         self.depth = depth
 
     # TODO(matías): dont know the type of e (pandas row)
-    def traverse(self, e):
+    def traverse(self, e, s: Stack=Stack()):
         if self.is_leaf():
-            return self.value
+            return s, self.value
         else:
             att_val = e[self.name]
-            return self.childs[att_val].traverse(e) if att_val in self.childs else None
+            if att_val in self.childs:
+                va = Stack.ValuedAttribute(name=self.name, value=att_val)
+                s = copy.deepcopy(s)
+                s.push(va)
+                return self.childs[att_val].traverse(e, s)
+            else:
+                return s, None
 
     def is_leaf(self) -> bool:
         return len(self.childs.keys()) == 0 and self.value is not None
@@ -100,8 +106,7 @@ class Node:
         return b
 
     def count_childs(self) -> int:
-        return 0 if self.is_leaf() else len(self.childs) + sum([child.count_childs() for child in self.childs.values()])
-    
+        return 0 if self.is_leaf() else len(self.childs)*2 + sum([child.count_childs() for child in self.childs.values()])
 class ID3:
             
     def __init__(self, gain_f: str='shannon', max_depth: int=None) -> None:
@@ -195,9 +200,9 @@ class ID3:
     def predict(self, x: pd.DataFrame) -> Iterable[Union[int, float]]:
         ret = []
         for idx, e in x.iterrows():
-            value = self.tree.traverse(e)
-            # if value is None:
-            #     print(f"Path not found for entry {e}")
+            s, value = self.tree.traverse(e)
+            if value is None:
+                value = mode(self._get_filtered_dataframe(s)[self.target_atr])
             ret.append(value)
         return ret
 
