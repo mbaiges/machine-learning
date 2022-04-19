@@ -3,7 +3,7 @@ import numpy as np
 from typing import Iterable, Union
 
 from id3 import ID3
-from utils import mode, bootstrap_df
+from utils import mode, bootstrap_df_build_sample
 
 class RandomForest:
 
@@ -13,7 +13,7 @@ class RandomForest:
 
     def load(self, x: pd.DataFrame, t: pd.DataFrame) -> None:
         for m in self.models:
-            (x_train, t_train), (x_test, t_test) = bootstrap_df(x, t, train_size=self.sample_size, test_size=self.sample_size)
+            x_train, t_train = bootstrap_df_build_sample(x, t, k=self.sample_size)
             m.load(x_train, t_train)
         self.target_atr = t.columns[0]
 
@@ -35,3 +35,6 @@ class RandomForest:
                 err += 1
         err /= x.shape[0]
         return results, err
+
+    def count_nodes(self):
+        return sum([m.count_nodes() for m in self.models]) / len(self.models)
