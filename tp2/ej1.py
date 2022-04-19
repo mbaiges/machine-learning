@@ -3,13 +3,14 @@ from typing import Iterable, Union
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sn
 
 from utils import bootstrap_df, hist, bins, LoadingBar
 from id3 import ID3
 from random_forest import RandomForest
 from models import Metrics
 
-np.random.seed(59076)
+np.random.seed(1)
 
 ########## DATA SET GERMAN CREDIT ##########
 DATASET_GERMAN_CREDIT             = "german_credit"
@@ -250,6 +251,28 @@ def precision_vs_nodes_plot(method: str, train_precisions: list, test_precisions
     plt.title(f"Grafico de ajuste arbol de decision para {method}")
     plt.legend()
     plt.show()
+
+
+def confusion(t, results):
+    cats = CATEGORIES
+    cats_len = len(cats)
+    
+    m = [[0 for i in range(cats_len)] for j in range(cats_len)]
+
+    for idx, pred_t in enumerate(results):
+        m[cats.index(t.iloc[idx][CREDITABILITY])][cats.index(pred_t)] += 1
+
+    m = np.array(m)
+
+    df_cm = pd.DataFrame(m, cats, cats)
+    # plt.figure(figsize=(10,7))
+    sn.set(font_scale=1.4) # for label size
+    sn.heatmap(df_cm, annot=True, annot_kws={"size": 16}, cmap=sn.cm.rocket_r, fmt='d') # font size
+    plt.xticks(rotation=0)
+    plt.show()
+
+    return m
+
     
 if __name__ == '__main__':
     # Load dataset
@@ -277,19 +300,20 @@ if __name__ == '__main__':
         # Train and test with bootstrap
         list_size = 500
         (x_train, t_train), (x_test, t_test) = bootstrap_df(x, t, train_size=list_size, test_size=list_size)
+ 
         # print(x_train)
 
-        # id3 = ID3()
-        # id3.load(x, t)
+        id3 = ID3()
+        id3.load(x_train, t_train)
         # id3.print_tree()
         # print(f"Max Depth: {id3.depth}")
         # print(f"Nodes: {id3.count_nodes()}")
-        # results = id3.predict(x_test)
-        # results, error = id3.eval(x_test, t_test)
-        # metrics_map = metrics(t_test[CREDITABILITY].to_numpy().tolist(), results)
-        # prec = precision(metrics_map)
-        # print(f"Error: {error}")
-        # print(f"Precision: {prec}")
+        predicted = id3.predict(x_test)
+        results, error = id3.eval(x_test, t_test)
+        metrics_map = metrics(t_test[CREDITABILITY].to_numpy().tolist(), results)
+        prec = precision(metrics_map)
+        print(f"Error: {error}")
+        print(f"Precision: {prec}")
 
         # Multiple iterations
         # precisions, errors = multiple_iterations_id3(x, t, n=50, show_loading_bar=True)
@@ -299,6 +323,8 @@ if __name__ == '__main__':
         (train_precisions, train_errors), (test_precisions, test_errors), depths, nodes = multiple_depths_id3(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, show_loading_bar=True)
         # (train_precisions, train_errors), (test_precisions, test_errors), depths, nodes = simpler_multiple_depths_id3(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=3, show_loading_bar=True)
         precision_vs_nodes_plot("ID3", train_precisions=train_precisions, test_precisions=test_precisions, nodes=depths)
+        confusion(t_test, predicted)
+        
 
     # Random Forest
     print("Random Forest!")
@@ -324,3 +350,4 @@ if __name__ == '__main__':
         precisions, errors = multiple_iterations_random_forest(x, t, n=50, show_loading_bar=True)
         print(f"Mean Precision: {np.mean(precisions):.3f}")
         print(f"Mean Error: {np.mean(errors):.3f}")
+
