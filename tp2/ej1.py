@@ -158,9 +158,11 @@ def precision(metrics_map: object):
     fp = sum(map(lambda m: m.fp, metrics_map.values()))
     return tp/(tp+fp) if (tp + fp) != 0 else 0
 
-def multiple_iterations_id3(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=5, n: int=1, show_loading_bar: bool=False) -> tuple:
+def multiple_iterations_id3(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=500, n: int=5, show_loading_bar: bool=False) -> tuple:
     precisions = [] 
     errors = []
+    all_t = []
+    all_results = []
     if show_loading_bar:
         loading_bar = LoadingBar()
         loading_bar.init()
@@ -176,13 +178,17 @@ def multiple_iterations_id3(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=5
         prec = precision(metrics_map)
         precisions.append(prec)
         errors.append(error)
+        all_t.append(t_test[CREDITABILITY].to_numpy())
+        all_results.append(results)
     if show_loading_bar:
         loading_bar.end()
-    return np.array(precisions), np.array(errors)
+    return np.array(precisions), np.array(errors), (np.array(all_t), np.array(all_results))
 
-def multiple_iterations_random_forest(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=5, n: int=1, show_loading_bar: bool=False) -> tuple:
+def multiple_iterations_random_forest(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=500, n: int=5, trees_per_forest: int=5, max_depth: int=None, show_loading_bar: bool=False) -> tuple:
     precisions = [] 
     errors = []
+    all_t = []
+    all_results = []
     if show_loading_bar:
         loading_bar = LoadingBar()
         loading_bar.init()
@@ -190,16 +196,18 @@ def multiple_iterations_random_forest(x: pd.DataFrame, t: pd.DataFrame, sample_s
         if show_loading_bar:
             loading_bar.update(i/n)
         (x_train, t_train), (x_test, t_test) = bootstrap_df(x, t, train_size=sample_size, test_size=sample_size)
-        rf = RandomForest(n=5, sample_size=500)
+        rf = RandomForest(n=trees_per_forest, sample_size=sample_size, max_depth=max_depth)
         rf.load(x_train, t_train)
         results, error = rf.eval(x_test, t_test)
         metrics_map = metrics(t_test[CREDITABILITY].to_numpy().tolist(), results)
         prec = precision(metrics_map)
         precisions.append(prec)
         errors.append(error)
+        all_t.append(t_test[CREDITABILITY].to_numpy())
+        all_results.append(results)
     if show_loading_bar:
         loading_bar.end()
-    return np.array(precisions), np.array(errors)
+    return np.array(precisions), np.array(errors), (np.array(all_t), np.array(all_results))
 
 def multiple_depths_id3(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=500, min_depth: int=0, max_depth: int=10, iterations_per_depth: int=10, show_loading_bar: bool=False) -> tuple:
     depths = range(min_depth, max_depth+1)
@@ -358,20 +366,31 @@ def precision_vs_nodes_plot(method: str, train_precisions: list, test_precisions
     plt.legend()
     if plot: plt.show()
 
-def confusion(t, results):
+def confusion(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=500, iterations: int=5, alg: str='id3', trees_per_forest: int=5, max_depth: int=None, show_loading_bar: bool=False):
     cats = CATEGORIES
     cats_len = len(cats)
     
     m = [[0 for i in range(cats_len)] for j in range(cats_len)]
+    
+    if alg == 'id3':
+        precisions, errors, (all_t, all_results) = multiple_iterations_id3(x, t, n=iterations, sample_size=sample_size, show_loading_bar=show_loading_bar)
+    else: # alg == 'rf'
+        precisions, errors, (all_t, all_results) = multiple_iterations_random_forest(x, t, n=iterations, sample_size=sample_size, trees_per_forest=trees_per_forest, max_depth=max_depth, show_loading_bar=show_loading_bar)
+    
+    print(all_results.shape)
+    for it in range(all_results.shape[0]):
+        for idx, pred_t in enumerate(all_results[it]):
+            true_t = all_t[it][idx]
+            m[cats.index(true_t)][cats.index(pred_t)] += 1
 
-    for idx, pred_t in enumerate(results):
-        m[cats.index(t.iloc[idx][CREDITABILITY])][cats.index(pred_t)] += 1
+    precisions=list(map(lambda e: 1-e,errors))
+    print(f"Precision: {np.mean(np.array(precisions))}")
 
     m = np.array(m)
 
     df_cm = pd.DataFrame(m, cats, cats)
     # plt.figure(figsize=(10,7))
-    sn.set(font_scale=1.4) # for label size
+    sn.set(font_scale=1.8) # for label size
     sn.heatmap(df_cm, annot=True, annot_kws={"size": 16}, cmap=sn.cm.rocket_r, fmt='d') # font size
     plt.xticks(rotation=0)
     plt.show()
@@ -405,7 +424,7 @@ if __name__ == '__main__':
         x = df[ATTRIBUTES_NAMES]
         t = df[T_NAME].to_frame()
         
-        # Train and test with bootstrap
+        # # Train and test with bootstrap
         # list_size = 500
         # (x_train, t_train), (x_test, t_test) = bootstrap_df(x, t, train_size=list_size, test_size=list_size)
  
@@ -424,15 +443,15 @@ if __name__ == '__main__':
         # print(f"Precision: {prec}")
 
         # Multiple iterations
-        # precisions, errors = multiple_iterations_id3(x, t, n=50, show_loading_bar=True)
+        # precisions, errors, _ = multiple_iterations_id3(x, t, sample_size=500, n=50, show_loading_bar=True)
         # print(f"Mean Precision: {np.mean(precisions):.3f}")
         # print(f"Mean Error: {np.mean(errors):.3f}")
 
-        (id3_train_precisions, train_errors), (id3_test_precisions, test_errors), depths, id3_nodes = multiple_depths_id3(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, show_loading_bar=True)
-        id3_train_precisions=list(map(lambda e: 1-e,train_errors))
-        id3_test_precisions=list(map(lambda e: 1-e,test_errors))
-        precision_vs_nodes_plot("ID3", train_precisions=id3_train_precisions, test_precisions=id3_test_precisions, nodes=id3_nodes)
-        # confusion(t_test, predicted)
+        # (id3_train_precisions, train_errors), (id3_test_precisions, test_errors), depths, id3_nodes = multiple_depths_id3(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, show_loading_bar=True)
+        # id3_train_precisions=list(map(lambda e: 1-e,train_errors))
+        # id3_test_precisions=list(map(lambda e: 1-e,test_errors))
+        # precision_vs_nodes_plot("ID3", train_precisions=id3_train_precisions, test_precisions=id3_test_precisions, nodes=id3_nodes)
+        # confusion(x, t, iterations=50, alg='id3', show_loading_bar=True)
 
     # Random Forest
     print("Random Forest!")
@@ -455,14 +474,18 @@ if __name__ == '__main__':
         # print(f"Precision: {prec}")
 
         # # Multiple iterations
-        # precisions, errors = multiple_iterations_random_forest(x, t, n=50, show_loading_bar=True)
+        # precisions, errors, _ = multiple_iterations_random_forest(x, t, sample_size=500, n=50, show_loading_bar=True)
         # print(f"Mean Precision: {np.mean(precisions):.3f}")
         # print(f"Mean Error: {np.mean(errors):.3f}")
-        rf_train_precisions, rf_test_precisions, rf_nodes = multiple_trees_and_depths_forest(x, t, min_trees=2, max_trees=15, show_loading_bar=True)
-        precision_vs_nodes_plot("ID3", id3_train_precisions, id3_test_precisions, id3_nodes, plot=False, method_location="label")
-        precision_vs_nodes_plot("RF", rf_train_precisions, rf_test_precisions, rf_nodes, plot=False, method_location="label")
-        plt.show()
+
+        # rf_train_precisions, rf_test_precisions, rf_nodes = multiple_trees_and_depths_forest(x, t, min_trees=2, max_trees=15, show_loading_bar=True)
+        # precision_vs_nodes_plot("ID3", id3_train_precisions, id3_test_precisions, id3_nodes, plot=False, method_location="label")
+        # precision_vs_nodes_plot("RF", rf_train_precisions, rf_test_precisions, rf_nodes, plot=False, method_location="label")
+        # plt.show()
+
         # (train_precisions, train_errors), (test_precisions, test_errors), depths, nodes = multiple_depths_forest(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, show_loading_bar=True)
         # train_precisions=list(map(lambda e: 1-e,train_errors))
         # test_precisions=list(map(lambda e: 1-e,test_errors))
         # precision_vs_nodes_plot("Random Forest", train_precisions=train_precisions, test_precisions=test_precisions, nodes=nodes)
+
+        confusion(x, t, iterations=50, alg='id3', trees_per_forest=6, max_depth=None, show_loading_bar=True)
