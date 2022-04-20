@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sn
 
-from utils import bootstrap_df, hist, bins, LoadingBar, split_df
+from utils import bootstrap_df, hist, bars, bins, LoadingBar, split_df
 from id3 import ID3
 from random_forest import RandomForest
 from models import Metrics
@@ -105,7 +105,7 @@ def analysis(df: pd.DataFrame) -> None:
 
     # Creditability
     creditabilities = df[CREDITABILITY].to_numpy()
-    hist(creditabilities, title=CREDITABILITY, bins_alg='dist', bins_options={'dist':1, 'min':-0.5, 'max':1.5})
+    bars(creditabilities, title=CREDITABILITY)
 
 def _discretize_with_bins(b, v):
     for i, bv in enumerate(b[1:]):
@@ -491,4 +491,4 @@ if __name__ == '__main__':
         # test_precisions=list(map(lambda e: 1-e,test_errors))
         # precision_vs_nodes_plot("Random Forest", train_precisions=train_precisions, test_precisions=test_precisions, nodes=depths)
 
-        # confusion(x, t, iterations=50, alg='id3', trees_per_forest=6, max_depth=5, show_loading_bar=True)
+        # confusion(x, t, iterations=50, alg='rf', trees_per_forest=5, max_depth=5, show_loading_bar=True)

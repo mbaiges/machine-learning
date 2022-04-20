@@ -73,6 +73,22 @@ def iqr(x: np.array) -> Union[int, float]:
     q75, q25 = np.percentile(x, [75 ,25])
     return q75 - q25
 
+def bars(x: np.array, title: str) -> None:
+    labels = sorted(set(x.tolist()))
+    c = {}
+    for e in x:
+        c[e] = c.get(e, 0) + 1
+    print(c)
+    x, y = [], []
+    for key, value in sorted(c.items()):
+        x.append(key)
+        y.append(value)
+
+    plt.rcParams.update({'font.size': 22})
+    plt.title(label=title)
+    plt.bar(x, y)
+    plt.show()
+
 def hist(x: np.array, title: str, bins_alg: str='diac', bins_options: object={}) -> None:
     weights = np.ones_like(x) / x.shape[0]
     plt.rcParams.update({'font.size': 22})
