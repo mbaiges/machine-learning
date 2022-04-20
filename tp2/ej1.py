@@ -308,9 +308,9 @@ def multiple_depths_forest(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=50
     return (np.array(train_precisions), np.array(train_errors)), (np.array(test_precisions), np.array(test_errors)), np.array(depths), np.array(nodes)
 
 def multiple_trees_and_depths_forest(x: pd.DataFrame, t: pd.DataFrame, min_trees: int=3, max_trees: int=10, show_loading_bar: bool=True) -> tuple:
-        trees_amount = list(map(lambda e: e % 2 != 0, range(min_trees, max_trees+1)))
+        trees_amount = list(filter(lambda e: e % 2 != 0, range(min_trees, max_trees+1)))
         iter = 0
-        total_iter = max_trees + 1 - min_trees
+        total_iter = len(trees_amount)
         mean_train_precisions = []
         mean_test_precisions = []
         best = {}
@@ -448,7 +448,7 @@ if __name__ == '__main__':
         # precisions, errors, _ = multiple_iterations_id3(x, t, sample_size=500, n=50, show_loading_bar=True)
         # print(f"Mean Precision: {np.mean(precisions):.3f}")
         # print(f"Mean Error: {np.mean(errors):.3f}")
-        bootstrap = False
+        bootstrap = True
         print(f"ID3 multi depth with bootstrap" if bootstrap else f"ID3 multi depth without bootstrap")
         (id3_train_precisions, train_errors), (id3_test_precisions, test_errors), depths, id3_nodes = multiple_depths_id3(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, show_loading_bar=True, bootstrap=bootstrap)
         id3_train_precisions=list(map(lambda e: 1-e,train_errors))
@@ -481,10 +481,10 @@ if __name__ == '__main__':
         # print(f"Mean Precision: {np.mean(precisions):.3f}")
         # print(f"Mean Error: {np.mean(errors):.3f}")
 
-        # rf_train_precisions, rf_test_precisions, rf_nodes = multiple_trees_and_depths_forest(x, t, min_trees=2, max_trees=15, show_loading_bar=True)
-        # precision_vs_nodes_plot("ID3", id3_train_precisions, id3_test_precisions, id3_nodes, plot=False, method_location="label")
-        # precision_vs_nodes_plot("RF", rf_train_precisions, rf_test_precisions, rf_nodes, plot=False, method_location="label")
-        # plt.show()
+        rf_train_precisions, rf_test_precisions, rf_nodes = multiple_trees_and_depths_forest(x, t, min_trees=3, max_trees=15, show_loading_bar=True)
+        precision_vs_nodes_plot("ID3", id3_train_precisions, id3_test_precisions, id3_nodes, plot=False, method_location="label")
+        precision_vs_nodes_plot("RF", rf_train_precisions, rf_test_precisions, rf_nodes, plot=False, method_location="label")
+        plt.show()
 
         # (train_precisions, train_errors), (test_precisions, test_errors), depths, nodes = multiple_depths_forest(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=5, trees_amount=6, show_loading_bar=True)
         # train_precisions=list(map(lambda e: 1-e,train_errors))
