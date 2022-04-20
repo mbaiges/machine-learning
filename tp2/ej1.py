@@ -249,7 +249,7 @@ def multiple_depths_id3(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=500, 
         loading_bar.end()
     return (np.array(train_precisions), np.array(train_errors)), (np.array(test_precisions), np.array(test_errors)), np.array(depths), np.array(nodes)
 
-def multiple_depths_forest(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=500, min_depth: int=0, max_depth: int=10, iterations_per_depth: int=10, show_loading_bar: bool=False) -> tuple:
+def multiple_depths_forest(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=500, min_depth: int=0, max_depth: int=10, iterations_per_depth: int=10, trees_amount: int=3, show_loading_bar: bool=False) -> tuple:
     depths = range(min_depth, max_depth+1)
     train_precisions = []
     train_errors = []
@@ -274,7 +274,7 @@ def multiple_depths_forest(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=50
                 loading_bar.update(iter/total_iter)
 
             (x_train, t_train), (x_test, t_test) = bootstrap_df(x, t, train_size=sample_size, test_size=sample_size)
-            rf = RandomForest(max_depth=depth)
+            rf = RandomForest(max_depth=depth, n=trees_amount)
             rf.load(x_train, t_train)
             s_nodes.append(rf.count_nodes())
             # id3.print_tree()
@@ -297,18 +297,67 @@ def multiple_depths_forest(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=50
         loading_bar.end()
     return (np.array(train_precisions), np.array(train_errors)), (np.array(test_precisions), np.array(test_errors)), np.array(depths), np.array(nodes)
 
-def precision_vs_nodes_plot(method: str, train_precisions: list, test_precisions: list, nodes: list):
+def multiple_trees_and_depths_forest(x: pd.DataFrame, t: pd.DataFrame, min_trees: int=3, max_trees: int=10, show_loading_bar: bool=True) -> tuple:
+        trees_amount = range(min_trees, max_trees+1)
+        iter = 0
+        total_iter = max_trees + 1 - min_trees
+        mean_train_precisions = []
+        mean_test_precisions = []
+        best = {}
+        if show_loading_bar:
+            loading_bar = LoadingBar()
+            loading_bar.init()
+        for tree_amount in trees_amount:
+            iter += 1
+            if show_loading_bar:
+                loading_bar.update(iter/total_iter)
+
+            (train_precisions, train_errors), (test_precisions, test_errors), depths, nodes = multiple_depths_forest(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, trees_amount=tree_amount, show_loading_bar=False)
+            train_precisions=list(map(lambda e: 1-e,train_errors))
+            test_precisions=list(map(lambda e: 1-e,test_errors))
+            mean_train_precision = sum(train_precisions)/len(train_precisions)
+            mean_test_precision = sum(test_precisions)/len(test_precisions)
+            mean_train_precisions.append(mean_train_precision)
+            mean_test_precisions.append(mean_test_precision)
+            if not best or best['mean_test_precision'] < mean_test_precision:
+                best['mean_test_precision'] = mean_test_precision
+                best['mean_train_precision'] = mean_train_precision
+                best['test_precision'] = test_precisions
+                best['train_precisions'] = train_precisions
+                best['nodes'] = nodes
+                best['n'] = tree_amount
+        print(f"\n---\nBest is {best['n']}\nmean train precision: {best['mean_train_precision']}\nmean test precision: {best['mean_test_precision']}\n---")
+    
+        # plt.rcParams.update({'font.size': 22})
+        plt.figure()
+        mean_precision_vs_tree_amount(mean_train_precisions=mean_train_precisions, mean_test_precisions=mean_test_precisions, trees_amount=trees_amount, plot=False)
+        plt.figure()
+        precision_vs_nodes_plot(f"Random Forest n={best['n']}", train_precisions=best['train_precisions'], test_precisions=best['test_precision'], nodes=best['nodes'], plot=False)
+        plt.show()
+        return np.array(best['train_precisions']), np.array(best['test_precision']), np.array(best['nodes'])
+
+def mean_precision_vs_tree_amount(mean_train_precisions: list, mean_test_precisions: list, trees_amount: list, plot: bool=True) -> None:
+    plt.plot(trees_amount, mean_train_precisions, marker='o', label="entrenamiento")
+    plt.plot(trees_amount, mean_test_precisions, marker='o', label="evaluacion")
+    plt.title(f"Precision promedio en funcion de la cantidad de arboles")
+    plt.xlabel("Cantidad de arboles")
+    plt.ylabel("Precision promedio")
+    plt.legend()
+    if plot: plt.show()
+
+def precision_vs_nodes_plot(method: str, train_precisions: list, test_precisions: list, nodes: list, plot: bool=True, method_location: str="title") -> None:
     ordered = sorted([(i, nodes[i]) for i in range(len(nodes))], key=lambda e: e[1])
     indexes = list(map(lambda e: e[0], ordered))
     nodes            = [nodes[i]            for i in indexes]
     train_precisions = [train_precisions[i] for i in indexes]
     test_precisions  = [test_precisions[i]  for i in indexes]
-    plt.plot(nodes, train_precisions, label="entrenamiento")
-    plt.plot(nodes, test_precisions, label="evaluacion")
-    plt.title(f"Grafico de ajuste arbol de decision para {method}")
+    plt.plot(nodes, train_precisions, marker='o', label=f"entrenamiento {method}" if method_location == "label" else "entrenamiento")
+    plt.plot(nodes, test_precisions, marker='o', label=f"evaluacion {method}" if method_location == "label" else "evaluacion")
+    plt.title(f"Grafico de ajuste arbol de decision para {method}" if method_location == "title" else "Grafico de ajuste arbol de decision")
+    plt.xlabel("Cantidad de nodos")
+    plt.ylabel("Precision")
     plt.legend()
-    plt.show()
-
+    if plot: plt.show()
 
 def confusion(t, results):
     cats = CATEGORIES
@@ -341,6 +390,8 @@ if __name__ == '__main__':
 
     # ID3
     print("ID3!")
+    
+    plt.rcParams.update({'font.size': 22})
     # Discretize
     if DATASET == DATASET_TENNIS:
         x = df[ATTRIBUTES_NAMES]
@@ -378,10 +429,10 @@ if __name__ == '__main__':
         # print(f"Mean Precision: {np.mean(precisions):.3f}")
         # print(f"Mean Error: {np.mean(errors):.3f}")
 
-        (train_precisions, train_errors), (test_precisions, test_errors), depths, nodes = multiple_depths_id3(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, show_loading_bar=True)
-        train_precisions=list(map(lambda e: 1-e,train_errors))
-        test_precisions=list(map(lambda e: 1-e,test_errors))
-        precision_vs_nodes_plot("ID3", train_precisions=train_precisions, test_precisions=test_precisions, nodes=nodes)
+        (id3_train_precisions, train_errors), (id3_test_precisions, test_errors), depths, id3_nodes = multiple_depths_id3(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, show_loading_bar=True)
+        id3_train_precisions=list(map(lambda e: 1-e,train_errors))
+        id3_test_precisions=list(map(lambda e: 1-e,test_errors))
+        precision_vs_nodes_plot("ID3", train_precisions=id3_train_precisions, test_precisions=id3_test_precisions, nodes=id3_nodes)
         # confusion(t_test, predicted)
 
     # Random Forest
@@ -408,8 +459,11 @@ if __name__ == '__main__':
         # precisions, errors = multiple_iterations_random_forest(x, t, n=50, show_loading_bar=True)
         # print(f"Mean Precision: {np.mean(precisions):.3f}")
         # print(f"Mean Error: {np.mean(errors):.3f}")
-
-        (train_precisions, train_errors), (test_precisions, test_errors), depths, nodes = multiple_depths_forest(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, show_loading_bar=True)
-        train_precisions=list(map(lambda e: 1-e,train_errors))
-        test_precisions=list(map(lambda e: 1-e,test_errors))
-        precision_vs_nodes_plot("Random Forest", train_precisions=train_precisions, test_precisions=test_precisions, nodes=nodes)
+        rf_train_precisions, rf_test_precisions, rf_nodes = multiple_trees_and_depths_forest(x, t, min_trees=2, max_trees=2, show_loading_bar=True)
+        precision_vs_nodes_plot("ID3", id3_train_precisions, id3_test_precisions, id3_nodes, plot=False, method_location="label")
+        precision_vs_nodes_plot("RF", rf_train_precisions, rf_test_precisions, rf_nodes, plot=False, method_location="label")
+        plt.show()
+        # (train_precisions, train_errors), (test_precisions, test_errors), depths, nodes = multiple_depths_forest(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, show_loading_bar=True)
+        # train_precisions=list(map(lambda e: 1-e,train_errors))
+        # test_precisions=list(map(lambda e: 1-e,test_errors))
+        # precision_vs_nodes_plot("Random Forest", train_precisions=train_precisions, test_precisions=test_precisions, nodes=nodes)
