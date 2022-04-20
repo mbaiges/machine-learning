@@ -158,7 +158,7 @@ def precision(metrics_map: object):
     fp = sum(map(lambda m: m.fp, metrics_map.values()))
     return tp/(tp+fp) if (tp + fp) != 0 else 0
 
-def multiple_iterations_id3(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=500, n: int=5, show_loading_bar: bool=False) -> tuple:
+def multiple_iterations_id3(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=500, n: int=5, max_depth: int=None, show_loading_bar: bool=False) -> tuple:
     precisions = [] 
     errors = []
     all_t = []
@@ -170,7 +170,7 @@ def multiple_iterations_id3(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=5
         if show_loading_bar:
             loading_bar.update(i/n)
         (x_train, t_train), (x_test, t_test) = bootstrap_df(x, t, train_size=sample_size, test_size=sample_size)
-        id3 = ID3()
+        id3 = ID3(max_depth=max_depth)
         id3.load(x_train, t_train)
         # id3.print_tree()
         results, error = id3.eval(x_test, t_test)
@@ -373,7 +373,7 @@ def confusion(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=500, iterations
     m = [[0 for i in range(cats_len)] for j in range(cats_len)]
     
     if alg == 'id3':
-        precisions, errors, (all_t, all_results) = multiple_iterations_id3(x, t, n=iterations, sample_size=sample_size, show_loading_bar=show_loading_bar)
+        precisions, errors, (all_t, all_results) = multiple_iterations_id3(x, t, n=iterations, sample_size=sample_size, max_depth=max_depth, show_loading_bar=show_loading_bar)
     else: # alg == 'rf'
         precisions, errors, (all_t, all_results) = multiple_iterations_random_forest(x, t, n=iterations, sample_size=sample_size, trees_per_forest=trees_per_forest, max_depth=max_depth, show_loading_bar=show_loading_bar)
     
@@ -447,11 +447,11 @@ if __name__ == '__main__':
         # print(f"Mean Precision: {np.mean(precisions):.3f}")
         # print(f"Mean Error: {np.mean(errors):.3f}")
 
-        # (id3_train_precisions, train_errors), (id3_test_precisions, test_errors), depths, id3_nodes = multiple_depths_id3(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, show_loading_bar=True)
+        # (id3_train_precisions, train_errors), (id3_test_precisions, test_errors), depths, id3_nodes = multiple_depths_id3(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=5, show_loading_bar=True)
         # id3_train_precisions=list(map(lambda e: 1-e,train_errors))
         # id3_test_precisions=list(map(lambda e: 1-e,test_errors))
-        # precision_vs_nodes_plot("ID3", train_precisions=id3_train_precisions, test_precisions=id3_test_precisions, nodes=id3_nodes)
-        # confusion(x, t, iterations=50, alg='id3', show_loading_bar=True)
+        # precision_vs_nodes_plot("ID3", train_precisions=id3_train_precisions, test_precisions=id3_test_precisions, nodes=depths)
+        confusion(x, t, iterations=50, alg='id3', max_depth=5, show_loading_bar=True)
 
     # Random Forest
     print("Random Forest!")
@@ -483,9 +483,9 @@ if __name__ == '__main__':
         # precision_vs_nodes_plot("RF", rf_train_precisions, rf_test_precisions, rf_nodes, plot=False, method_location="label")
         # plt.show()
 
-        # (train_precisions, train_errors), (test_precisions, test_errors), depths, nodes = multiple_depths_forest(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, show_loading_bar=True)
+        # (train_precisions, train_errors), (test_precisions, test_errors), depths, nodes = multiple_depths_forest(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=5, trees_amount=6, show_loading_bar=True)
         # train_precisions=list(map(lambda e: 1-e,train_errors))
         # test_precisions=list(map(lambda e: 1-e,test_errors))
-        # precision_vs_nodes_plot("Random Forest", train_precisions=train_precisions, test_precisions=test_precisions, nodes=nodes)
+        # precision_vs_nodes_plot("Random Forest", train_precisions=train_precisions, test_precisions=test_precisions, nodes=depths)
 
-        confusion(x, t, iterations=50, alg='id3', trees_per_forest=6, max_depth=None, show_loading_bar=True)
+        confusion(x, t, iterations=50, alg='id3', trees_per_forest=6, max_depth=5, show_loading_bar=True)
