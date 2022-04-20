@@ -312,7 +312,7 @@ def multiple_trees_and_depths_forest(x: pd.DataFrame, t: pd.DataFrame, min_trees
             if show_loading_bar:
                 loading_bar.update(iter/total_iter)
 
-            (train_precisions, train_errors), (test_precisions, test_errors), depths, nodes = multiple_depths_forest(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, trees_amount=tree_amount, show_loading_bar=False)
+            (train_precisions, train_errors), (test_precisions, test_errors), depths, nodes = multiple_depths_forest(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=2, trees_amount=tree_amount, show_loading_bar=False)
             train_precisions=list(map(lambda e: 1-e,train_errors))
             test_precisions=list(map(lambda e: 1-e,test_errors))
             mean_train_precision = sum(train_precisions)/len(train_precisions)
@@ -328,7 +328,6 @@ def multiple_trees_and_depths_forest(x: pd.DataFrame, t: pd.DataFrame, min_trees
                 best['n'] = tree_amount
         print(f"\n---\nBest is {best['n']}\nmean train precision: {best['mean_train_precision']}\nmean test precision: {best['mean_test_precision']}\n---")
     
-        # plt.rcParams.update({'font.size': 22})
         plt.figure()
         mean_precision_vs_tree_amount(mean_train_precisions=mean_train_precisions, mean_test_precisions=mean_test_precisions, trees_amount=trees_amount, plot=False)
         plt.figure()
