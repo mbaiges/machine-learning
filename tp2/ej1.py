@@ -458,7 +458,7 @@ if __name__ == '__main__':
         # precisions, errors = multiple_iterations_random_forest(x, t, n=50, show_loading_bar=True)
         # print(f"Mean Precision: {np.mean(precisions):.3f}")
         # print(f"Mean Error: {np.mean(errors):.3f}")
-        rf_train_precisions, rf_test_precisions, rf_nodes = multiple_trees_and_depths_forest(x, t, min_trees=2, max_trees=2, show_loading_bar=True)
+        rf_train_precisions, rf_test_precisions, rf_nodes = multiple_trees_and_depths_forest(x, t, min_trees=2, max_trees=15, show_loading_bar=True)
         precision_vs_nodes_plot("ID3", id3_train_precisions, id3_test_precisions, id3_nodes, plot=False, method_location="label")
         precision_vs_nodes_plot("RF", rf_train_precisions, rf_test_precisions, rf_nodes, plot=False, method_location="label")
         plt.show()
