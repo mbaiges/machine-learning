@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sn
 
-from utils import bootstrap_df, hist, bins, LoadingBar
+from utils import bootstrap_df, hist, bins, LoadingBar, split_df
 from id3 import ID3
 from random_forest import RandomForest
 from models import Metrics
@@ -211,7 +211,7 @@ def multiple_iterations_random_forest(x: pd.DataFrame, t: pd.DataFrame, sample_s
         loading_bar.end()
     return np.array(precisions), np.array(errors), (np.array(all_t), np.array(all_results))
 
-def multiple_depths_id3(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=500, min_depth: int=0, max_depth: int=10, iterations_per_depth: int=10, show_loading_bar: bool=False) -> tuple:
+def multiple_depths_id3(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=500, min_depth: int=0, max_depth: int=10, iterations_per_depth: int=10, show_loading_bar: bool=False, bootstrap: bool=True) -> tuple:
     depths = range(min_depth, max_depth+1)
     train_precisions = []
     train_errors = []
@@ -235,7 +235,7 @@ def multiple_depths_id3(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=500, 
             if show_loading_bar:
                 loading_bar.update(iter/total_iter)
 
-            (x_train, t_train), (x_test, t_test) = bootstrap_df(x, t, train_size=sample_size, test_size=sample_size)
+            (x_train, t_train), (x_test, t_test) = bootstrap_df(x, t, train_size=sample_size, test_size=sample_size) if bootstrap else split_df(x,t, train_size=sample_size, test_size=sample_size)
             id3 = ID3(max_depth=depth)
             id3.load(x_train, t_train)
             s_nodes.append(id3.count_nodes())
@@ -308,7 +308,7 @@ def multiple_depths_forest(x: pd.DataFrame, t: pd.DataFrame, sample_size: int=50
     return (np.array(train_precisions), np.array(train_errors)), (np.array(test_precisions), np.array(test_errors)), np.array(depths), np.array(nodes)
 
 def multiple_trees_and_depths_forest(x: pd.DataFrame, t: pd.DataFrame, min_trees: int=3, max_trees: int=10, show_loading_bar: bool=True) -> tuple:
-        trees_amount = range(min_trees, max_trees+1)
+        trees_amount = list(map(lambda e: e % 2 != 0, range(min_trees, max_trees+1)))
         iter = 0
         total_iter = max_trees + 1 - min_trees
         mean_train_precisions = []
@@ -448,12 +448,13 @@ if __name__ == '__main__':
         # precisions, errors, _ = multiple_iterations_id3(x, t, sample_size=500, n=50, show_loading_bar=True)
         # print(f"Mean Precision: {np.mean(precisions):.3f}")
         # print(f"Mean Error: {np.mean(errors):.3f}")
-
-        # (id3_train_precisions, train_errors), (id3_test_precisions, test_errors), depths, id3_nodes = multiple_depths_id3(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=5, show_loading_bar=True)
-        # id3_train_precisions=list(map(lambda e: 1-e,train_errors))
-        # id3_test_precisions=list(map(lambda e: 1-e,test_errors))
-        # precision_vs_nodes_plot("ID3", train_precisions=id3_train_precisions, test_precisions=id3_test_precisions, nodes=depths)
-        # confusion(x, t, iterations=50, alg='id3', max_depth=5, show_loading_bar=True)
+        bootstrap = False
+        print(f"ID3 multi depth with bootstrap" if bootstrap else f"ID3 multi depth without bootstrap")
+        (id3_train_precisions, train_errors), (id3_test_precisions, test_errors), depths, id3_nodes = multiple_depths_id3(x, t, sample_size=500, min_depth=0, max_depth=8, iterations_per_depth=1, show_loading_bar=True, bootstrap=bootstrap)
+        id3_train_precisions=list(map(lambda e: 1-e,train_errors))
+        id3_test_precisions=list(map(lambda e: 1-e,test_errors))
+        precision_vs_nodes_plot("ID3", train_precisions=id3_train_precisions, test_precisions=id3_test_precisions, nodes=id3_nodes)
+        # confusion(t_test, predicted)
 
     # Random Forest
     print("Random Forest!")

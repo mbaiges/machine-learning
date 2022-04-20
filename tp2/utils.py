@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import random
 from typing import Iterable, Union
 
 def df_to_np(df: pd.DataFrame, x_columns: str, t_column: str) -> tuple:
@@ -50,6 +51,23 @@ def bootstrap_df(x: pd.DataFrame, t: pd.DataFrame, train_size: int=None, test_si
     train_size = x.shape[0] if train_size is None else train_size
     test_size  = x.shape[0] if test_size is None else test_size
     return bootstrap_df_build_sample(x, t, train_size), bootstrap_df_build_sample(x, t, test_size)
+
+
+RANDOM = random.Random(111)
+def split_df(x: pd.DataFrame, t: pd.DataFrame, train_size: int=None, test_size: int=None) -> tuple:
+    train_size = x.shape[0] / 2 if train_size is None else train_size
+    test_size  = x.shape[0] / 2 if test_size is None else test_size
+    if train_size + test_size > x.shape[0]:
+        train_size = x.shape[0] / 2
+        test_size  = x.shape[0] / 2
+    shuffled_idxs = [i for i in range(x.shape[0])]
+    RANDOM.shuffle(shuffled_idxs)
+    x_arr, t_arr = x.to_numpy(), t.to_numpy()
+    x_arr, t_arr = np.array([x_arr[i] for i in shuffled_idxs]), np.array([t_arr[i] for i in shuffled_idxs])
+    x_columns = x.columns
+    t_columns = t.columns
+    return (pd.DataFrame(x_arr[:train_size], columns=x_columns), pd.DataFrame(t_arr[:train_size], columns=t_columns)), (pd.DataFrame(x_arr[train_size:train_size+test_size], columns=x_columns), pd.DataFrame(t_arr[train_size:train_size+test_size], columns=t_columns))
+
 
 def iqr(x: np.array) -> Union[int, float]:
     q75, q25 = np.percentile(x, [75 ,25])

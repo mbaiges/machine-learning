@@ -196,19 +196,20 @@ def confusion(all_results):
 
     df_cm = pd.DataFrame(m, cats, cats)
     # plt.figure(figsize=(10,7))
-    sn.set(font_scale=1.4) # for label size
+    sn.set(font_scale=1.6) # for label size
     sn.heatmap(df_cm, annot=True, annot_kws={"size": 22}, cmap=sn.cm.rocket_r, fmt='d') # font size
     plt.xticks(rotation=0)
     plt.show()
 
     return m
 
-def compare_weighted(x, t, min_k=1, max_k=200, step_k=4, iterations_per_k=4):
+def compare_weighted(x, t, min_k=1, max_k=200, step_k=4, iterations_per_k=4) -> tuple:
     # non_weighted
     ks = list(range(min_k, max_k + step_k, step_k))
 
     non_weighted_precisions = []
     weighted_precisions     = []
+    best = {}
     for knn_k in ks:
         print(f"--> Comparing K = {knn_k}")
         nw_avg = 0
@@ -217,9 +218,16 @@ def compare_weighted(x, t, min_k=1, max_k=200, step_k=4, iterations_per_k=4):
             x, t = shuffle(x, t)
             nw_avg += multiple_cross_validations(x, t, knn_k=knn_k, weighted=False)[0]
             w_avg  += multiple_cross_validations(x, t, knn_k=knn_k, weighted=True)[0]
-        non_weighted_precisions.append(nw_avg/iterations_per_k)
-        weighted_precisions.append(w_avg/iterations_per_k)
-    
+        nw_precision = nw_avg/iterations_per_k
+        w_precision = w_avg/iterations_per_k
+        non_weighted_precisions.append(nw_precision)
+        weighted_precisions.append(w_precision)
+        if not best or w_precision > best['w_precision']:
+            best['k'] = knn_k
+            best['nw_precision'] = nw_precision
+            best['w_precision'] = w_precision
+
+    print(f"---\nBest is {best['k']}\nnw_precision: {best['nw_precision']}\nw_precision: {best['w_precision']}\n---")
     plt.plot(ks, non_weighted_precisions, color='r', label='KNN')
     plt.plot(ks, weighted_precisions, color='g', label='KNN con Distancias Ponderadas')
 
@@ -228,6 +236,7 @@ def compare_weighted(x, t, min_k=1, max_k=200, step_k=4, iterations_per_k=4):
     plt.title("Precision en funcion de k")
     plt.legend()
     plt.show()
+    return best['k'], best['nw_precision'], best['w_precision']
     
 if __name__ == '__main__':
     df = pd.read_csv(FILEPATH, sep=';')
@@ -240,10 +249,12 @@ if __name__ == '__main__':
     # dist_analysis(df)
     discretize(df)
 
-    knn_k = 3
-
     x, t = df_to_np(df, [WORD_COUNT, TITLE_SENTIMENT, SENTIMENT_VALUE], STAR_RATING)
     x, t = shuffle(x, t)
+    plt.rcParams.update({'font.size': 22})
+    
+    k, nw_precision, w_precision = compare_weighted(x, t, min_k=1, max_k=200, step_k=5, iterations_per_k=4)
+    knn_k, nw_precision, w_precision = compare_weighted(x, t, min_k=k-5 if k > 5 else 1, max_k=k+5, step_k=1, iterations_per_k=4)
     print(f"------- KNN k = {knn_k} -------")
     knn = KNN(k=knn_k, weighted=False)
     knn.load(x, t)
@@ -261,5 +272,4 @@ if __name__ == '__main__':
     print(precision)
     confusion(all_results)
 
-    compare_weighted(x, t, min_k=5, max_k=200, step_k=5, iterations_per_k=4)
     
