@@ -104,6 +104,8 @@ def analysis(df: pd.DataFrame) -> None:
     # PCA para ver como se ubican en un diagrama de biplot???????? Si sale super rapido nomas
 
     # Creditability
+    creditabilities = df[CREDITABILITY].to_numpy()
+    hist(creditabilities, title=CREDITABILITY, bins_alg='dist', bins_options={'dist':1, 'min':-0.5, 'max':1.5})
 
 def _discretize_with_bins(b, v):
     for i, bv in enumerate(b[1:]):
@@ -404,7 +406,7 @@ if __name__ == '__main__':
     print(f"Loaded {df.shape[0]} rows")
 
     # Analyze
-    # analysis(df)
+    analysis(df)
 
     # ID3
     print("ID3!")
@@ -451,7 +453,7 @@ if __name__ == '__main__':
         # id3_train_precisions=list(map(lambda e: 1-e,train_errors))
         # id3_test_precisions=list(map(lambda e: 1-e,test_errors))
         # precision_vs_nodes_plot("ID3", train_precisions=id3_train_precisions, test_precisions=id3_test_precisions, nodes=depths)
-        confusion(x, t, iterations=50, alg='id3', max_depth=5, show_loading_bar=True)
+        # confusion(x, t, iterations=50, alg='id3', max_depth=5, show_loading_bar=True)
 
     # Random Forest
     print("Random Forest!")
@@ -488,4 +490,4 @@ if __name__ == '__main__':
         # test_precisions=list(map(lambda e: 1-e,test_errors))
         # precision_vs_nodes_plot("Random Forest", train_precisions=train_precisions, test_precisions=test_precisions, nodes=depths)
 
-        confusion(x, t, iterations=50, alg='id3', trees_per_forest=6, max_depth=5, show_loading_bar=True)
+        # confusion(x, t, iterations=50, alg='id3', trees_per_forest=6, max_depth=5, show_loading_bar=True)

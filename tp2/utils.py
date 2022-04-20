@@ -55,10 +55,11 @@ def iqr(x: np.array) -> Union[int, float]:
     q75, q25 = np.percentile(x, [75 ,25])
     return q75 - q25
 
-def hist(x: np.array, title: str) -> None:
+def hist(x: np.array, title: str, bins_alg: str='diac', bins_options: object={}) -> None:
+    weights = np.ones_like(x) / x.shape[0]
     plt.rcParams.update({'font.size': 22})
     plt.title(label=title)
-    plt.hist(x, bins=bins(x, alg='diac'))
+    plt.hist(x, bins=bins(x, alg=bins_alg, options=bins_options), weights=weights)
     plt.show()
 
 # class BinningRule:
@@ -91,8 +92,8 @@ def _bins_perc(x: np.array, options={}) -> Iterable[Union[int, float]]:
 
 ## https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule
 def _bins_diac(x: np.array, options={}) -> Iterable[Union[int, float]]:
-    bins_width = int(2 * iqr(x) / x.shape[0]**(1/3))
-    return range(np.min(x), np.max(x) + bins_width, bins_width)
+    bins_width = 2 * iqr(x) / x.shape[0]**(1/3)
+    return np.arange(np.min(x), np.max(x) + bins_width, bins_width)
 
 def bins(x: np.array, alg: str='diac', options: object={}) -> Iterable[Union[int, float]]:
     ret = None
