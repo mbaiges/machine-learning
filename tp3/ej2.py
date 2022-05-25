@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 from sklearn import svm
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 
 RESOURCES_PATH  = "resources/"
 CIELO_FILE      = "cielo.jpg"
@@ -20,6 +22,14 @@ class ClassType(Enum):
     CIELO   = 0, CIELO_FILE,
     PASTO   = 1, PASTO_FILE,
     VACA    = 2, VACA_FILE
+
+NUM_TO_CLASS_MAP = {
+    ClassType.CIELO.value[0]: ClassType.CIELO.name,
+    ClassType.PASTO.value[0]: ClassType.PASTO.name,
+    ClassType.VACA.value[0]: ClassType.VACA.name,
+} 
+def num_to_class(num: int):
+    return NUM_TO_CLASS_MAP[num]
 
 def pixels_with_class(pixmap: np.ndarray, class_: int) -> np.ndarray:
         # transform pixmap (x,y,3) to pixel array (x*y, 3)
@@ -107,9 +117,19 @@ if __name__ == '__main__':
     #TODO: test differents params C, decision_function_shape, kernel
     # https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
     # best = multiple_c_svm(x_train, x_test, t_train, t_test)
-    best = multiple_kernel_svm(x_train, x_test, t_train, t_test)
-    print(best)
-    # clf = svm.SVC(C=1.0, decision_function_shape='ovr', kernel='rbf')
-    # clf.fit(x_train, t_train)
+    # best = multiple_kernel_svm(x_train, x_test, t_train, t_test)
+    # print(best)
+    clf = svm.SVC(C=1.0, decision_function_shape='ovr', kernel='rbf')
+    clf.fit(x_train, t_train)
+    t_pred = clf.predict(x_test)
+
+    #Confusion matrix
+    classes_    = [num_to_class(num) for num in clf.classes_]
+    t_test      = [num_to_class(num) for num in t_test]
+    t_pred      = [num_to_class(num) for num in t_pred]
+    c_matrix    = confusion_matrix(t_test, t_pred, labels=classes_)
+    disp        = ConfusionMatrixDisplay(confusion_matrix=c_matrix, display_labels=classes_)
+    disp.plot()
+    plt.show()
+
     # print(clf.score(x_test, t_test))
-    
