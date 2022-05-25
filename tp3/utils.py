@@ -51,7 +51,6 @@ def distance_between_line_and_point(line_points, point):
         # finally, we get the distance
         dist = distance_between_points((x, y), (xe, ye))
         
-    print(dist)
     return dist
 
 #
@@ -101,8 +100,6 @@ def build_linear_separable_dataset(n: int, x_min: float, x_max: float, y_min: fl
     # support for error near line
     min_dist = (x_max - x_min) if (x_max - x_min) >= (y_max - y_min) else (y_max - y_min)
     err_dist = min_dist * border_error_tolerance_dist_pctg
-
-    print (min_dist, err_dist)
 
     # tagged points dataset
     dataset_list: list = []
