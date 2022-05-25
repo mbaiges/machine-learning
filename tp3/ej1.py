@@ -30,4 +30,7 @@ if __name__ == '__main__':
     print(random_dataset)
 
     # Plot points
-    utils.plot_points(random_dataset, line_points, limits=(x_boundaries, y_boundaries))
+    # utils.plot_points(random_dataset, line_points, limits=(x_boundaries, y_boundaries))
+
+    # Optimal hyperplane
+    line_points = utils.optimal_hyperplane(random_dataset)

@@ -52,6 +52,28 @@ def distance_between_line_and_point(line_points, point):
         
     return dist
 
+# 
+# Internal function to get discriminator, that decides
+# a tag value (or class) for each point, based on a line
+# given by its points ((x1, y1), (x2, y2)).
+#
+# The discriminator function returns -1 or 1 depending
+# on the side of the area delimited by the line that 
+# the point is in.
+# 
+def _get_line_points_discriminator(line_points: tuple):
+    (x1, y1), (x2, y2) = line_points
+    discriminator: function = lambda x, y: 1
+    if (x1 == x2):
+        # x = x1
+        discriminator = lambda x, y: 1 if x >= x1 else -1
+    else:
+        # y = slope * x + b
+        slope: float = (y2 - y1)/(x2 - x1)
+        b: float = y1 - slope * x1
+        discriminator = lambda x, y: 1 if y >= (slope * x + b) else -1
+    return discriminator
+
 #
 # Build a dataset of n points separated by a random line.
 # The dataset has points between (x_min, x_max) and (y_min, y_max). 
@@ -86,15 +108,7 @@ def build_linear_separable_dataset(n: int, x_min: float, x_max: float, y_min: fl
     line_points = ((p1_x, p1_y), (p2_x, p2_y))
 
     # discriminator function
-    discriminator: function = lambda x, y: 1
-    if (p1_x == p2_x):
-        # x = p1_x
-        discriminator = lambda x, y: 1 if x >= p1_x else -1
-    else:
-        # y = slope * x + b
-        slope: float = (p2_y - p1_y)/(p2_x - p1_x)
-        b: float = p1_y - slope * p1_x
-        discriminator = lambda x, y: 1 if y >= (slope * x + b) else -1
+    discriminator = _get_line_points_discriminator(line_points)
 
     # support for error near line
     min_dist = (x_max - x_min) if (x_max - x_min) >= (y_max - y_min) else (y_max - y_min)
@@ -152,3 +166,52 @@ def plot_points(dataset: np.array, line_points=None, limits=None, title="Puntos"
     ax.set_title(title)
 
     plt.show()
+
+def _find_min_distance_between_line_and_all_points(line_points: tuple, dataset: np.array):
+    return None
+
+# 
+# Retrieves the optimal hyperplane, given a dataset of points.
+# 
+# This solution only works with 2 dimensional problems with
+# 2 different classes.
+# 
+def optimal_hyperplane(dataset: np.array) -> tuple:
+    optimal_line_points = None
+    optimal_min_dist = None
+    
+    # we first find 4 different points, 2 of each class
+    classes = list(sorted(set(dataset[:,2])))
+    
+    c1 = classes[0]
+    c2 = classes[1]
+
+    p1 = dataset[dataset[:,2] == c1][:,:2]
+    p2 = dataset[dataset[:,2] == c2][:,:2]
+
+    for i1_1 in range(p1.shape[0]):
+        p1_1 = p1[i1_1]
+        for i1_2 in range(p1.shape[0]):
+            p1_2 = p1[i1_2]
+            if (p1_1[0] == p1_2[0] and p1_1[1] == p1_2[1]): # we need different points
+                continue
+            # at this point we already have 2 different points from class #1
+            for i2_1 in range(p2.shape[0]):
+                p2_1 = p2[i2_1]
+                for i2_2 in range(p2.shape[0]):
+                    p2_2 = p2[i2_2]
+                    if (p2_1[0] == p2_2[0] and p2_1[1] == p2_2[1]): # we need different points
+                        continue
+                    # at this point we already have 2 different points from class #1 and class #2
+
+                    # linda complejidad en este momento :)
+
+                    # we have to find the best set of points, that maximize distance between all 
+                    # points and the line separating them
+
+                    # first we get line_points for this set of points
+                    mid_p1 = ( (p1_1[0] + p2_1[0])/2, (p1_1[1] + p2_1[1])/2 )
+                    mid_p2 = ( (p1_2[0] + p2_2[0])/2, (p1_2[1] + p2_2[1])/2 )
+                    line_points = (mid_p1, mid_p2)
+                    min_dist = _find_min_distance_between_line_and_all_points(line_points, dataset)
+                    print(min_dist)
