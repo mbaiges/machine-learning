@@ -63,6 +63,29 @@ def shuffle(x, t):
     RANDOM.shuffle(shuffled_idxs)
     return np.array([x[i] for i in shuffled_idxs]), np.array([t[i] for i in shuffled_idxs])
 
+def multiple_c_svm(x_train: np.ndarray, x_test: np.ndarray, t_train: np.ndarray, t_test: np.ndarray, c_start: float=0.1, c_end: float=2.0, step: float=0.1) -> dict:
+    best = {}
+    for c in np.arange(c_start, c_end + step, step):
+        clf = svm.SVC(C=c, decision_function_shape='ovr', kernel='rbf')
+        clf.fit(x_train, t_train)
+        accuracy = clf.score(x_test, t_test)
+        if not best or best['accuracy'] < accuracy:
+            best['accuracy'] = accuracy
+            best['c'] = c
+    return best
+
+def multiple_kernel_svm(x_train: np.ndarray, x_test: np.ndarray, t_train: np.ndarray, t_test: np.ndarray) -> dict:
+    kernels = ['linear', 'poly', 'rbf', 'sigmoid']
+    best = {}
+    for kernel in kernels:
+        clf = svm.SVC(C=1.0, decision_function_shape='ovr', kernel=kernel)
+        clf.fit(x_train, t_train)
+        accuracy = clf.score(x_test, t_test)
+        if not best or best['accuracy'] < accuracy:
+            best['accuracy'] = accuracy
+            best['kernel'] = kernel
+    return best
+
 if __name__ == '__main__':
     df = build_image_dataset()
     print(df)
@@ -73,21 +96,20 @@ if __name__ == '__main__':
 
     # 40% de los datos se usaran para test
     # https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html
+    # https://scikit-learn.org/stable/modules/svm.html#svm-kernels
     x_train, x_test, t_train, t_test = train_test_split(x, t, test_size=0.4, shuffle=False)
 
     # validation.py:1111: DataConversionWarning: A column-vector y was passed when a 1d array was expected. 
     # Please change the shape of y to (n_samples, ), for example using ravel()
     t_train = t_train.flatten()
-    t_test = t_test.flatten()
+    t_test  = t_test.flatten()
 
-    clf = svm.SVC()
-    clf.fit(x_train, t_train)
-    print(clf.score(x_test, t_test))
-    t_pred = clf.predict(x_test)
-    # diff = 0
-    # print(f"t_test shape: {t_test.shape}, t_pred shape: {t_pred.shape}")
-    # for t_p, t_t in zip(t_pred, t_test):
-    #     if t_p != t_t:
-    #         diff += 1
-    #         print(f"real: {t_t}, predicted: {t_p}")
-    # print(f"total diff = {diff}, error = {diff/t_test.shape[0]}")
+    #TODO: test differents params C, decision_function_shape, kernel
+    # https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
+    # best = multiple_c_svm(x_train, x_test, t_train, t_test)
+    best = multiple_kernel_svm(x_train, x_test, t_train, t_test)
+    print(best)
+    # clf = svm.SVC(C=1.0, decision_function_shape='ovr', kernel='rbf')
+    # clf.fit(x_train, t_train)
+    # print(clf.score(x_test, t_test))
+    
