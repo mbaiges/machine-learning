@@ -124,3 +124,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+tp3/image_dataset.csv
+test.py
