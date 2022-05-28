@@ -1,6 +1,8 @@
 import os
 from enum import Enum
 import random
+import json
+from joblib import dump, load
 
 from PIL import Image
 import pandas as pd
@@ -14,20 +16,23 @@ RESOURCES_PATH  = "resources/"
 CIELO_FILE      = "cielo.jpg"
 PASTO_FILE      = "pasto.jpg"
 VACA_FILE       = "vaca.jpg"
+COW_FILE        = "cow.jpg"
+COW_F_FILE      = "cow_f.jpg"
 
 IMG_DATASET_CSV = "image_dataset.csv" 
 CSV_HEADER = ['r', 'g', 'b', 'class']
 
 class ClassType(Enum):
-    CIELO   = 0, CIELO_FILE,
-    PASTO   = 1, PASTO_FILE,
-    VACA    = 2, VACA_FILE
+    CIELO   = 0, CIELO_FILE, [0,0,255]
+    PASTO   = 1, PASTO_FILE, [0,255,0]
+    VACA    = 2, VACA_FILE,  [255,0,0]
 
 NUM_TO_CLASS_MAP = {
-    ClassType.CIELO.value[0]: ClassType.CIELO.name,
-    ClassType.PASTO.value[0]: ClassType.PASTO.name,
-    ClassType.VACA.value[0]: ClassType.VACA.name,
+    ClassType.CIELO.value[0]: ClassType.CIELO,
+    ClassType.PASTO.value[0]: ClassType.PASTO,
+    ClassType.VACA.value[0]: ClassType.VACA,
 } 
+
 def num_to_class(num: int):
     return NUM_TO_CLASS_MAP[num]
 
@@ -81,7 +86,8 @@ def multiple_c_svm(x_train: np.ndarray, x_test: np.ndarray, t_train: np.ndarray,
         accuracy = clf.score(x_test, t_test)
         if not best or best['accuracy'] < accuracy:
             best['accuracy'] = accuracy
-            best['c'] = c
+            best['c']        = c
+            best['clf']      = clf
     return best
 
 def multiple_kernel_svm(x_train: np.ndarray, x_test: np.ndarray, t_train: np.ndarray, t_test: np.ndarray) -> dict:
@@ -94,7 +100,40 @@ def multiple_kernel_svm(x_train: np.ndarray, x_test: np.ndarray, t_train: np.nda
         if not best or best['accuracy'] < accuracy:
             best['accuracy'] = accuracy
             best['kernel'] = kernel
+            best['clf']    = clf
     return best
+
+def multiple_c_kernel_svm(x_train: np.ndarray, x_test: np.ndarray, t_train: np.ndarray, t_test: np.ndarray, c_start: float=0.1, c_end: float=2.0, step: float=0.1) -> dict:
+    best    = {}
+    kernels = ['linear', 'poly', 'rbf', 'sigmoid']
+    for c in np.arange(c_start, c_end + step, step):
+        for kernel in kernels:
+            clf = svm.SVC(C=c, decision_function_shape='ovr', kernel=kernel)
+            clf.fit(x_train, t_train)
+            accuracy = clf.score(x_test, t_test)
+            if not best or best['accuracy'] < accuracy:
+                best['accuracy'] = accuracy
+                best['c']        = c
+                best['kernel']   = kernel
+                best['clf']      = clf
+                
+    return best
+
+# PUNTO e. y f.
+def predict_image(clf, filename: str) -> None:
+    with Image.open(RESOURCES_PATH + filename) as im:
+        # add all pixels to df
+        pixmap  = np.asarray(im)
+        h, w    = pixmap.shape[0], pixmap.shape[1]
+        pixmap  = pixmap.reshape(pixmap.shape[0] * pixmap.shape[1], pixmap.shape[2])
+        t_pred  = clf.predict(pixmap)
+        new_pixmap = []
+        for t in t_pred:
+            new_pixmap.append(num_to_class(t).value[2])
+        new_pixmap = np.array(new_pixmap)
+        new_pixmap = new_pixmap.reshape((h,w,3))
+        plt.imshow(new_pixmap)
+        plt.show()
 
 if __name__ == '__main__':
     df = build_image_dataset()
@@ -119,17 +158,46 @@ if __name__ == '__main__':
     # best = multiple_c_svm(x_train, x_test, t_train, t_test)
     # best = multiple_kernel_svm(x_train, x_test, t_train, t_test)
     # print(best)
-    clf = svm.SVC(C=1.0, decision_function_shape='ovr', kernel='rbf')
-    clf.fit(x_train, t_train)
-    t_pred = clf.predict(x_test)
+    # clf = svm.SVC(C=1.0, decision_function_shape='ovr', kernel='rbf')
+    # clf.fit(x_train, t_train)
+    # t_pred = clf.predict(x_test)
 
-    #Confusion matrix
-    classes_    = [num_to_class(num) for num in clf.classes_]
-    t_test      = [num_to_class(num) for num in t_test]
-    t_pred      = [num_to_class(num) for num in t_pred]
-    c_matrix    = confusion_matrix(t_test, t_pred, labels=classes_)
-    disp        = ConfusionMatrixDisplay(confusion_matrix=c_matrix, display_labels=classes_)
-    disp.plot()
-    plt.show()
+    # #Confusion matrix
+    # classes_    = [num_to_class(num) for num in clf.classes_]
+    # t_test      = [num_to_class(num) for num in t_test]
+    # t_pred      = [num_to_class(num) for num in t_pred]
+    # c_matrix    = confusion_matrix(t_test, t_pred, labels=classes_)
+    # disp        = ConfusionMatrixDisplay(confusion_matrix=c_matrix, display_labels=classes_)
+    # disp.plot()
+    # plt.show()
 
     # print(clf.score(x_test, t_test))
+    generate = False
+    if os.path.isfile('best_ej2.json') and not generate:
+    # if os.path.isfile('best_ej2.joblib') and not generate:
+        print('found')
+        # clf = load('best_ej2.joblib') 
+        with open('best_ej2.json', 'r') as file:
+            best = json.load(file)
+            clf = svm.SVC(C=best['c'], decision_function_shape='ovr', kernel=best['kernel'])
+            clf.fit(x_train, t_train)
+    else:
+        # PUNTO c. y d.
+        best = multiple_c_kernel_svm(x_train, x_test, t_train, t_test)
+        clf = best['clf']
+        # dump(clf, 'best_ej2.joblib') 
+        with open('best_ej2.json', 'w') as file:
+            file.write(best)
+        t_pred  = clf.predict(x_test)
+
+        #Confusion matrix
+        classes_    = [num_to_class(num).name for num in clf.classes_]
+        t_test      = [num_to_class(num).name for num in t_test]
+        t_pred      = [num_to_class(num).name for num in t_pred]
+        c_matrix    = confusion_matrix(t_test, t_pred, labels=classes_)
+        disp        = ConfusionMatrixDisplay(confusion_matrix=c_matrix, display_labels=classes_)
+        disp.plot()
+        plt.show()
+    
+    predict_image(clf,COW_FILE)
+    predict_image(clf,COW_F_FILE)
