@@ -4,15 +4,16 @@ seed = 59076
 np.random.seed(seed)
 
 import utils
+import loss
 
 if __name__ == '__main__':
     print("Exercise 1")
 
     # Parameters
-    n: int = 20
+    n: int = 100
     x_boundaries = (0, 5)
     y_boundaries = x_boundaries
-    err_dist_pctg = 0.08
+    err_dist_pctg = 0
     err_prob = 0.5
 
     # Build random linear separable dataset
@@ -30,6 +31,25 @@ if __name__ == '__main__':
     print(random_dataset)
 
     # Plot points
+    utils.plot_points(random_dataset, line_points, limits=(x_boundaries, y_boundaries))
+
+    d = random_dataset[:,:2].shape[1]
+    w = np.random.uniform(-1,1,size=(d))
+    w = w / np.linalg.norm(w)
+
+    b = np.random.uniform(-1,1)
+
+
+    w_loss, b_loss = loss.loss(random_dataset[:,:2], random_dataset[:,2], 1000, w, b, 10)
+
+    print("Loss")
+
+
+    print("w loss")
+    print(w_loss)
+
+    print("b loss")
+    print(b_loss)
     # utils.plot_points(random_dataset, line_points, limits=(x_boundaries, y_boundaries))
 
     # Optimal hyperplane
