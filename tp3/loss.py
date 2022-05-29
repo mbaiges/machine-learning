@@ -1,5 +1,4 @@
 import math
-from matplotlib.pyplot import show
 import numpy as np
 
 import utils
@@ -8,7 +7,7 @@ import utils
 
 def loss_function(x: np.array, y: np.array, w, b, c):
     def l(xi, yi, w, b):
-        t = yi * np.inner(w, xi) + b
+        t = yi * (np.inner(w, xi) + b)
         return 0 if t >= 1 else 1 - t
     
     s = 0
@@ -28,8 +27,8 @@ def loss(dataset: np.array, max_iter: int=1000, c: float=0.5, debug: bool=False,
     b = np.random.uniform(-1,1)
 
     # Algorithm
-    k_w = 0.0001
-    k_b = 0.0001
+    k_w = 0.001
+    k_b = 0.001
 
     min_loss = math.inf
 
@@ -52,7 +51,7 @@ def loss(dataset: np.array, max_iter: int=1000, c: float=0.5, debug: bool=False,
                 b = b - k_b * c * (-1) * np.sum(y)
             else:
                 w = w - k_w * w
-            w = w / np.linalg.norm(w)
+            # w = w / np.linalg.norm(w)
         
         # Loss
         loss = loss_function(x, y, w, b, c)
@@ -64,8 +63,8 @@ def loss(dataset: np.array, max_iter: int=1000, c: float=0.5, debug: bool=False,
             print(f'w: {w}, b: {b}, loss: {loss}')        
 
         # Learning rate decrement
-        k_w = k_w - 0.000001 if k_w > 0.000001 else k_w
-        k_b = k_b - 0.000001 if k_b > 0.000001 else k_b
+        # k_w = k_w - 0.000001 if k_w > 0.000001 else k_w
+        # k_b = k_b - 0.000001 if k_b > 0.000001 else k_b
 
         iter += 1
 
