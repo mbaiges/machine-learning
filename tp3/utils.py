@@ -2,6 +2,7 @@ import math
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import functools
 
 # 
 # Calculates the distance between a point1 definded as
@@ -51,6 +52,32 @@ def distance_between_line_and_point(line_points, point):
         dist = distance_between_points((x, y), (xe, ye))
         
     return dist
+
+# 
+# Returns the line formula as a string
+# 
+def get_line_formula(line_points: tuple, fmt: str = 'full'):
+    (x1, y1), (x2, y2) = line_points
+    s = 'missing'
+    if (x1 == x2):
+        # x = x1
+        if fmt == 'simple':
+            s = f'x = {x1:.3f}'
+        else: # format == 'full' included
+            s = f'1 x + 0 y + {-x1:.3f} = 0'
+    else:
+        # y = slope * x + b
+        slope: float = (y2 - y1)/(x2 - x1)
+        b: float = y1 - slope * x1
+        if fmt == 'simple':
+            s = f'y = {slope:.3f} x + {b:.3f}'
+        else: # format == 'full' included
+            w = np.array([slope, -1])
+            norm = np.linalg.norm(w)
+            w /= norm # normalized
+            b /= norm
+            s = f'{w[0]:.3f} x + {w[1]:.3f} y + {b:.3f} = 0'
+    return s
 
 # 
 # Internal function to get discriminator, that decides
@@ -167,8 +194,38 @@ def plot_points(dataset: np.array, line_points=None, limits=None, title="Puntos"
 
     plt.show()
 
+#
+# Returns the minimum distance between a point in the dataset and the line
+#
 def _find_min_distance_between_line_and_all_points(line_points: tuple, dataset: np.array):
-    return None
+    m = math.inf
+
+    discriminator = _get_line_points_discriminator(line_points)
+    sides = {}
+    crossed = False
+    for i in range(dataset.shape[0]):
+        x = dataset[i,0]
+        y = dataset[i,1]
+        t = dataset[i,2]
+        current_tag = discriminator(x, y)
+
+        if sides.get(t, current_tag) != current_tag:
+            print("Changed sides")
+            crossed = True
+            break
+
+        d = distance_between_line_and_point(line_points, (x, y)) # TODO(matías): still is not accurate in case of points at the other side.
+        if d < m:
+            m = d
+
+    return m if not crossed else -1
+
+# 
+# Returns n closest points to line
+#
+def _closest_points_to_line(dataset: np.array, found_line_points: list, n: int):
+    kf = lambda p: distance_between_line_and_point(found_line_points, p)
+    return np.array(sorted(dataset.tolist(), key=kf))[:n,:] 
 
 # 
 # Retrieves the optimal hyperplane, given a dataset of points.
@@ -176,9 +233,9 @@ def _find_min_distance_between_line_and_all_points(line_points: tuple, dataset: 
 # This solution only works with 2 dimensional problems with
 # 2 different classes.
 # 
-def optimal_hyperplane(dataset: np.array) -> tuple:
+def optimal_hyperplane(dataset: np.array, found_line_points: list, show_loading_bar: bool=False) -> tuple:
     optimal_line_points = None
-    optimal_min_dist = None
+    optimal_min_dist = -math.inf
     
     # we first find 4 different points, 2 of each class
     classes = list(sorted(set(dataset[:,2])))
@@ -186,8 +243,37 @@ def optimal_hyperplane(dataset: np.array) -> tuple:
     c1 = classes[0]
     c2 = classes[1]
 
-    p1 = dataset[dataset[:,2] == c1][:,:2]
-    p2 = dataset[dataset[:,2] == c2][:,:2]
+    p1 = _closest_points_to_line(dataset[dataset[:,2] == c1][:,:2], found_line_points, 4)
+    p2 = _closest_points_to_line(dataset[dataset[:,2] == c2][:,:2], found_line_points, 4)
+
+    # to avoid repeating cases
+    already_tested_combinations = set()
+    def bundle_combination(l: list) -> tuple:
+        aux = [tuple(e) for e in l]
+        def cmp(t1: tuple, t2: tuple) -> int:
+            t1x, t1y = t1
+            t2x, t2y = t2
+            if t1x < t2x:
+                return -1
+            elif t1x > t2x:
+                return 1
+            else:
+                if t1y < t2y:
+                    return -1
+                elif t1y > t2y:
+                    return 1
+                else:
+                    return 0
+        sorted_tuples = sorted(aux,key=functools.cmp_to_key(cmp))
+        return tuple(sorted_tuples)
+
+    print("Searching for optimal hyperplane")
+    if show_loading_bar:
+        loading_bar = LoadingBar()
+        loading_bar.init()
+
+    it = 0
+    total_it = p1.shape[0]**2 * p2.shape[0]**2
 
     for i1_1 in range(p1.shape[0]):
         p1_1 = p1[i1_1]
@@ -200,8 +286,19 @@ def optimal_hyperplane(dataset: np.array) -> tuple:
                 p2_1 = p2[i2_1]
                 for i2_2 in range(p2.shape[0]):
                     p2_2 = p2[i2_2]
+
+                    it += 1
                     if (p2_1[0] == p2_2[0] and p2_1[1] == p2_2[1]): # we need different points
                         continue
+
+                    # check if combination has been already tried
+                    comb = bundle_combination([p1_1, p1_2, p2_1, p2_2])
+                    if comb in already_tested_combinations:
+                        continue
+
+                    if show_loading_bar:
+                        loading_bar.update(1.0 * (it-1) / total_it)
+
                     # at this point we already have 2 different points from class #1 and class #2
 
                     # linda complejidad en este momento :)
@@ -214,4 +311,49 @@ def optimal_hyperplane(dataset: np.array) -> tuple:
                     mid_p2 = ( (p1_2[0] + p2_2[0])/2, (p1_2[1] + p2_2[1])/2 )
                     line_points = (mid_p1, mid_p2)
                     min_dist = _find_min_distance_between_line_and_all_points(line_points, dataset)
-                    print(min_dist)
+                    if min_dist > optimal_min_dist:
+                        optimal_min_dist = min_dist
+                        optimal_line_points = line_points
+                        plot_points(dataset, optimal_line_points, limits=([0,5], [0,5]))
+                        print(optimal_min_dist)
+
+                    already_tested_combinations.add(comb)
+
+    if show_loading_bar:
+        loading_bar.end()
+
+    print(f'Tried {len(already_tested_combinations)} combinations')
+    return optimal_line_points, optimal_min_dist
+
+
+# Loading bar
+
+class LoadingBar:
+
+    def __init__(self, width: int=20):
+        self.width = width
+
+    def init(self):
+        print("")
+        self.update(0.0)
+
+    def end(self):
+        self.update(1.0)
+        print("")
+    
+    def update(self, percentage: float):
+        bar = "["
+        for b in range(0, self.width):
+            p = b/self.width
+            p_next = (b+1)/self.width
+            p_mid = (p+p_next)/2
+            char = ' '
+            if percentage > p:
+                if percentage < p_mid:
+                    char = '▄'
+                else:
+                    char = '█'
+                    
+            bar += char
+        bar += f"] ({percentage*100:05.2f}%)"
+        print(f"\r{bar}", end = '')
