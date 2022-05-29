@@ -1,5 +1,8 @@
 import math
+from matplotlib.pyplot import show
 import numpy as np
+
+import utils
 
 ## TODO criterio de corte
 
@@ -15,7 +18,7 @@ def loss_function(x: np.array, y: np.array, w, b, c):
     return (1/2) * np.inner(w, np.transpose(w)) + c * s
 
 
-def loss(dataset: np.array, max_iter: int=1000, c: float=0.5, debug: bool=False):
+def loss(dataset: np.array, max_iter: int=1000, c: float=0.5, debug: bool=False, show_loading_bar: bool=False):
     # Init variables
     x, y = dataset[:,:2], dataset[:,2]
     d = x.shape[1]
@@ -30,10 +33,16 @@ def loss(dataset: np.array, max_iter: int=1000, c: float=0.5, debug: bool=False)
 
     min_loss = math.inf
 
+    if show_loading_bar:
+        loading_bar = utils.LoadingBar()
+        loading_bar.init()
+
     iter = 1
     while iter < max_iter:
         ## TODO mejorar cuanto decremento
         for i, x_i in enumerate(x):
+            if show_loading_bar:
+                loading_bar.update(1.0 * iter / max_iter)
             t =  y[i] * (np.inner(w, x_i) + b)
             if t < 1:
                 aux = np.zeros(d)
@@ -59,4 +68,8 @@ def loss(dataset: np.array, max_iter: int=1000, c: float=0.5, debug: bool=False)
         k_b = k_b - 0.000001 if k_b > 0.000001 else k_b
 
         iter += 1
+
+    if show_loading_bar:
+        loading_bar.end()
+
     return w, b, min_loss

@@ -34,10 +34,10 @@ if __name__ == '__main__':
     # Loss Function based Algorithm 
 
     ## Parameters
-    iterations = 20
-    c = 10
+    iterations = 1000
+    c = 100
 
-    w_loss, b_loss, loss = loss.loss(random_dataset, iterations, c, debug=True)
+    w_loss, b_loss, loss = loss.loss(random_dataset, iterations, c, debug=True, show_loading_bar=True)
     predicted_line_points = utils.full_formula_to_line_points(w_loss, b_loss)
     print(f'Predicted Line Formula (Simple format) --> {utils.get_line_formula(predicted_line_points, fmt="simple")}')
     print(f'Predicted Line Formula (Full format) --> {utils.get_line_formula(predicted_line_points, fmt="full")}')
