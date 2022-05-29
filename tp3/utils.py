@@ -133,7 +133,7 @@ def _get_line_points_discriminator(line_points: tuple):
 # 5 * border_error_tolerance_dist_pctg, with a probability
 # of confusing the point of border_error_prob)
 #
-def build_linear_separable_dataset(n: int, x_min: float, x_max: float, y_min: float, y_max: float, border_error_tolerance_dist_pctg: float = 0, border_error_prob: float = 0.2) -> pd.DataFrame:
+def build_linear_separable_dataset(n: int, x_min: float, x_max: float, y_min: float, y_max: float, border_error_tolerance_dist_pctg: float = 0, border_error_prob: float = 0.2, margin: float = 0) -> pd.DataFrame:
     # correction in case of an error
     (x_min, x_max) = (x_min, x_max) if x_max >= x_min else (x_max, x_min)
     (y_min, y_max) = (y_min, y_max) if y_max >= y_min else (y_max, y_min)
@@ -144,11 +144,11 @@ def build_linear_separable_dataset(n: int, x_min: float, x_max: float, y_min: fl
 
     # separation line
     ## point 1
-    p1_x: float = np.random.uniform(x_min, x_max)
-    p1_y: float = np.random.uniform(y_min, y_max)
+    p1_x: float = np.random.uniform(x_min+margin, x_max-margin)
+    p1_y: float = np.random.uniform(y_min+margin, y_max-margin)
     ## point 2
-    p2_x: float = np.random.uniform(x_min, x_max)
-    p2_y: float = np.random.uniform(y_min, y_max)
+    p2_x: float = np.random.uniform(x_min+margin, x_max-margin)
+    p2_y: float = np.random.uniform(y_min+margin, y_max-margin)
 
     # line points ((x1, y1), (x2, y2)).
     # This is a helper so we can build the line later
