@@ -52,8 +52,8 @@ if __name__ == '__main__':
     # print(b_loss)
 
     # Optimal hyperplane
-    # optimal_line_points, dist = utils.optimal_hyperplane(random_dataset, line_points, show_loading_bar=True)
-    # print(f'Optimal Line Formula (Simple format) --> {utils.get_line_formula(line_points, fmt="simple")}')
-    # print(f'Optimal Line Formula (Full format) --> {utils.get_line_formula(line_points, fmt="full")}')
+    optimal_line_points, dist = utils.optimal_hyperplane(random_dataset, line_points, show_loading_bar=True)
+    print(f'Optimal Line Formula (Simple format) --> {utils.get_line_formula(line_points, fmt="simple")}')
+    print(f'Optimal Line Formula (Full format) --> {utils.get_line_formula(line_points, fmt="full")}')
 
-    # utils.plot_points(random_dataset, optimal_line_points, limits=(x_boundaries, y_boundaries))
+    utils.plot_points(random_dataset, optimal_line_points, limits=(x_boundaries, y_boundaries))

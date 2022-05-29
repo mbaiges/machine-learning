@@ -209,8 +209,9 @@ def _find_min_distance_between_line_and_all_points(line_points: tuple, dataset: 
         t = dataset[i,2]
         current_tag = discriminator(x, y)
 
-        if sides.get(t, current_tag) != current_tag:
-            print("Changed sides")
+        sides[current_tag] = sides.get(current_tag, t)
+        if sides[current_tag] != t:
+            # print("Changed sides")
             crossed = True
             break
 
@@ -233,7 +234,7 @@ def _closest_points_to_line(dataset: np.array, found_line_points: list, n: int):
 # This solution only works with 2 dimensional problems with
 # 2 different classes.
 # 
-def optimal_hyperplane(dataset: np.array, found_line_points: list, show_loading_bar: bool=False) -> tuple:
+def optimal_hyperplane(dataset: np.array, found_line_points: list, show_loading_bar: bool=False, plot_intermediate_states: bool=False) -> tuple:
     optimal_line_points = None
     optimal_min_dist = -math.inf
     
@@ -314,8 +315,9 @@ def optimal_hyperplane(dataset: np.array, found_line_points: list, show_loading_
                     if min_dist > optimal_min_dist:
                         optimal_min_dist = min_dist
                         optimal_line_points = line_points
-                        plot_points(dataset, optimal_line_points, limits=([0,5], [0,5]))
-                        print(optimal_min_dist)
+                        if plot_intermediate_states:
+                            plot_points(dataset, optimal_line_points, limits=([0,5], [0,5]))
+                        # print(optimal_min_dist)
 
                     already_tested_combinations.add(comb)
 
