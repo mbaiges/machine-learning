@@ -1,7 +1,6 @@
 import os
 from enum import Enum
 import random
-import json
 from joblib import dump, load
 
 from PIL import Image
@@ -119,7 +118,6 @@ def multiple_c_kernel_svm(x_train: np.ndarray, x_test: np.ndarray, t_train: np.n
                 
     return best
 
-# PUNTO e. y f.
 def predict_image(clf, filename: str) -> None:
     with Image.open(RESOURCES_PATH + filename) as im:
         # add all pixels to df
@@ -173,21 +171,19 @@ if __name__ == '__main__':
 
     # print(clf.score(x_test, t_test))
     generate = False
-    if os.path.isfile('best_ej2.json') and not generate:
-    # if os.path.isfile('best_ej2.joblib') and not generate:
+    # if os.path.isfile('best_ej2.json') and not generate:
+    if os.path.isfile('best_ej2.joblib') and not generate:
         print('found')
-        # clf = load('best_ej2.joblib') 
-        with open('best_ej2.json', 'r') as file:
-            best = json.load(file)
-            clf = svm.SVC(C=best['c'], decision_function_shape='ovr', kernel=best['kernel'])
-            clf.fit(x_train, t_train)
+        clf = load('best_ej2.joblib')
+        print(clf.n_support_) 
+        print(clf.support_vectors_)
     else:
         # PUNTO c. y d.
         best = multiple_c_kernel_svm(x_train, x_test, t_train, t_test)
         clf = best['clf']
-        # dump(clf, 'best_ej2.joblib') 
-        with open('best_ej2.json', 'w') as file:
-            file.write(best)
+        print(clf.n_support_) 
+        print(clf.support_vectors_)
+        dump(clf, 'best_ej2.joblib')
         t_pred  = clf.predict(x_test)
 
         #Confusion matrix
@@ -199,5 +195,6 @@ if __name__ == '__main__':
         disp.plot()
         plt.show()
     
-    predict_image(clf,COW_FILE)
-    predict_image(clf,COW_F_FILE)
+    # PUNTO e. y f.
+    predict_image(clf, COW_FILE)
+    predict_image(clf, COW_F_FILE)
