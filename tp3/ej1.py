@@ -1,17 +1,17 @@
 import numpy as np
+from perceptron import SimplePerceptron
 
 seed = 59076
 np.random.seed(seed)
 
 import utils
 import loss
-import simple_perceptron
 
 if __name__ == '__main__':
     print("Exercise 1")
 
     # Parameters
-    n: int = 52
+    n: int = 100
     x_boundaries = (0, 5)
     y_boundaries = x_boundaries
     err_dist_pctg = 0
@@ -45,7 +45,13 @@ if __name__ == '__main__':
     # c = 10
     batch_size = 10
 
-    w_loss, b_loss, err = simple_perceptron.fit(random_dataset, iterations, batch_size, debug=True, show_loading_bar=True)
+    # w_loss, b_loss, err = simple_perceptron.fit(random_dataset, iterations, batch_size, debug=True, show_loading_bar=True)
+    perceptron = SimplePerceptron(random_dataset[:,:2], random_dataset[:,2], 0.001)
+    error = perceptron.train(iterations)
+    w_min = perceptron.w_min
+    b_loss = w_min[0]
+    w_loss = w_min[1:]
+    
     predicted_line_points = utils.full_formula_to_line_points(w_loss, b_loss)
     print(f'Predicted Line Formula (Simple format) --> {utils.get_line_formula(predicted_line_points, fmt="simple")}')
     print(f'Predicted Line Formula (Full format) --> {utils.get_line_formula(predicted_line_points, fmt="full")}')
