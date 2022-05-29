@@ -80,6 +80,26 @@ def get_line_formula(line_points: tuple, fmt: str = 'full'):
     return s
 
 # 
+# Given the full formula (w and b) returns two line points
+# 
+def full_formula_to_line_points(w: np.array, b: float):
+    a0, a1 = w[0], w[1]
+
+    # a0 x + a1 y + b = 0
+    # y = -a0/a1 x - b/a1
+    # y = l_slope x + l_b
+
+    l_slope = -a0/a1
+    l_b = -b/a1
+
+    x1 = 0
+    y1 = l_slope * x1 + l_b
+    x2 = 1
+    y2 = l_slope * x2 + l_b
+
+    return [[x1, y1], [x2, y2]]
+
+# 
 # Internal function to get discriminator, that decides
 # a tag value (or class) for each point, based on a line
 # given by its points ((x1, y1), (x2, y2)).

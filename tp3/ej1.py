@@ -29,31 +29,23 @@ if __name__ == '__main__':
 
     print(f'Line Formula (Simple format) --> {utils.get_line_formula(line_points, fmt="simple")}')
     print(f'Line Formula (Full format) --> {utils.get_line_formula(line_points, fmt="full")}')
-
-    # Plot points
     utils.plot_points(random_dataset, line_points, limits=(x_boundaries, y_boundaries))
 
-    # d = random_dataset[:,:2].shape[1]
-    # w = np.random.uniform(-1,1,size=(d))
-    # w = w / np.linalg.norm(w)
+    d = random_dataset[:,:2].shape[1]
+    w = np.random.uniform(-1,1,size=(d))
+    w = w / np.linalg.norm(w)
 
-    # b = np.random.uniform(-1,1)
-
-
-    # w_loss, b_loss = loss.loss(random_dataset[:,:2], random_dataset[:,2], 1000, w, b, 10)
-
-    # print("Loss")
+    b = np.random.uniform(-1,1)
 
 
-    # print("w loss")
-    # print(w_loss)
-
-    # print("b loss")
-    # print(b_loss)
+    w_loss, b_loss = loss.loss(random_dataset[:,:2], random_dataset[:,2], 1000, w, b, 10)
+    predicted_line_points = utils.full_formula_to_line_points(w_loss, b_loss)
+    print(f'Predicted Line Formula (Simple format) --> {utils.get_line_formula(predicted_line_points, fmt="simple")}')
+    print(f'Predicted Line Formula (Full format) --> {utils.get_line_formula(predicted_line_points, fmt="full")}')
+    utils.plot_points(random_dataset, predicted_line_points, limits=(x_boundaries, y_boundaries))
 
     # Optimal hyperplane
     optimal_line_points, dist = utils.optimal_hyperplane(random_dataset, line_points, show_loading_bar=True)
     print(f'Optimal Line Formula (Simple format) --> {utils.get_line_formula(line_points, fmt="simple")}')
     print(f'Optimal Line Formula (Full format) --> {utils.get_line_formula(line_points, fmt="full")}')
-
     utils.plot_points(random_dataset, optimal_line_points, limits=(x_boundaries, y_boundaries))
