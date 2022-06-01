@@ -1,3 +1,4 @@
+from filecmp import cmp
 import math
 import pandas as pd
 import numpy as np
@@ -302,6 +303,14 @@ def optimal_hyperplane(dataset: np.array, found_line_points: list, show_loading_
     p1 = _closest_points_to_line(dataset[dataset[:,2] == c1][:,:2], found_line_points, n_points)
     p2 = _closest_points_to_line(dataset[dataset[:,2] == c2][:,:2], found_line_points, n_points)
 
+    if plot_intermediate_states:
+        # we make a copy of the original dataset
+        d = np.copy(dataset)
+        # we make a map defining a color for each possible tag value
+        c_by_value = {value: POINTS_COLORS[idx] for idx, value in enumerate(sorted(set(d[:,2])))}
+        # we make a colors list for each point
+        c = list(map(lambda t: c_by_value[t], d[:,2]))
+
     # to avoid repeating cases
     already_tested_combinations = set()
     def bundle_combination(l: list) -> tuple:
@@ -329,7 +338,7 @@ def optimal_hyperplane(dataset: np.array, found_line_points: list, show_loading_
         loading_bar.init()
 
     it = 0
-    total_it = p1.shape[0]**2 * p2.shape[0]**2
+    total_it = p1.shape[0]**2 * p2.shape[0] + p2.shape[0]**2 * p1.shape[0]
 
     for i1_1 in range(p1.shape[0]):
         p1_1 = p1[i1_1]
@@ -340,41 +349,134 @@ def optimal_hyperplane(dataset: np.array, found_line_points: list, show_loading_
             # at this point we already have 2 different points from class #1
             for i2_1 in range(p2.shape[0]):
                 p2_1 = p2[i2_1]
-                for i2_2 in range(p2.shape[0]):
-                    p2_2 = p2[i2_2]
+                it += 1
 
-                    it += 1
-                    if (p2_1[0] == p2_2[0] and p2_1[1] == p2_2[1]): # we need different points
-                        continue
+                # check if combination has been already tried
+                comb = bundle_combination([p1_1, p1_2, p2_1])
+                if comb in already_tested_combinations:
+                    continue
 
-                    # check if combination has been already tried
-                    comb = bundle_combination([p1_1, p1_2, p2_1, p2_2])
-                    if comb in already_tested_combinations:
-                        continue
+                if show_loading_bar:
+                    loading_bar.update(1.0 * (it-1) / total_it)
 
-                    if show_loading_bar:
-                        loading_bar.update(1.0 * (it-1) / total_it)
+                # at this point we already have 2 different points from class #1 and 1 point from class #2
 
-                    # at this point we already have 2 different points from class #1 and class #2
+                # we have to find the best set of points, that maximize distance between all 
+                # points and the line separating them
 
-                    # linda complejidad en este momento :)
+                # first we get line_points for this set of points
+                line_points = (p1_1, p1_2)
+                d = distance_between_line_and_point(line_points, p2_1)
+                w, b = line_points_to_full_formula(line_points)
+                res = np.inner(w, np.array([p2_1[0], p2_1[1]])) + b
+                points = sorted([p1_1, p1_2], key=lambda p: p[0])
+                b_e = b
+                if res > 0:
+                    if points[0][1] >= points[1][1]:
+                        b -= d/2
+                        b_e -= d
+                    else:
+                        b += d/2
+                        b_e += d
+                else:
+                    if points[0][1] >= points[1][1]:
+                        b += d/2
+                        b_e += d
+                    else:
+                        b -= d/2
+                        b_e -= d
+                new_line_points = full_formula_to_line_points(w, b)
+                extreme_line_points = full_formula_to_line_points(w, b_e)
+                min_dist = _find_min_distance_between_line_and_all_points(new_line_points, dataset)
+                if min_dist > optimal_min_dist:
+                    optimal_min_dist = min_dist
+                    optimal_line_points = new_line_points
+                    if plot_intermediate_states:
+                        fig, ax = plt.subplots()
+                        ax.scatter(dataset[:,0], dataset[:,1], c=c)
+                        ax.set_xlim(left=0, right=5)
+                        ax.set_ylim(bottom=0, top=5)
+                        ax.axline(line_points[0], line_points[1], color=LINE_COLOR, linewidth=1, label="Extremo #1")
+                        # ax.axline(line_points[0], line_points[1], color=LINE_COLOR, linewidth=1, label="Después de mover")
+                        ax.scatter([p1_1[0], p1_2[0], p2_1[0]], [p1_1[1], p1_2[1], p2_1[1]], c='red')
+                        ax.axline(optimal_line_points[0], optimal_line_points[1], color=LINE_COLOR, linewidth=1, label="Nueva Óptima")
+                        ax.axline(extreme_line_points[0], extreme_line_points[1], color=LINE_COLOR, linewidth=1, label="Extremo #2")
+                        # ax.legend(loc="upper left")
+                        plt.show()
+                    # if plot_intermediate_states:
+                    #     plot_points(dataset, optimal_line_points, limits=([0,5], [0,5]))
+                    print(f'Optimal distance updated: {optimal_min_dist}')
 
-                    # we have to find the best set of points, that maximize distance between all 
-                    # points and the line separating them
+                already_tested_combinations.add(comb)
 
-                    # first we get line_points for this set of points
-                    mid_p1 = ( (p1_1[0] + p2_1[0])/2, (p1_1[1] + p2_1[1])/2 )
-                    mid_p2 = ( (p1_2[0] + p2_2[0])/2, (p1_2[1] + p2_2[1])/2 )
-                    line_points = (mid_p1, mid_p2)
-                    min_dist = _find_min_distance_between_line_and_all_points(line_points, dataset)
-                    if min_dist > optimal_min_dist:
-                        optimal_min_dist = min_dist
-                        optimal_line_points = line_points
-                        if plot_intermediate_states:
-                            plot_points(dataset, optimal_line_points, limits=([0,5], [0,5]))
-                        # print(optimal_min_dist)
+    for i1_1 in range(p2.shape[0]):
+        p1_1 = p2[i1_1]
+        for i1_2 in range(p2.shape[0]):
+            p1_2 = p2[i1_2]
+            if (p1_1[0] == p1_2[0] and p1_1[1] == p1_2[1]): # we need different points
+                continue
+            # at this point we already have 2 different points from class #1
+            for i2_1 in range(p1.shape[0]):
+                p2_1 = p1[i2_1]
+                it += 1
 
-                    already_tested_combinations.add(comb)
+                # check if combination has been already tried
+                comb = bundle_combination([p1_1, p1_2, p2_1])
+                if comb in already_tested_combinations:
+                    continue
+
+                if show_loading_bar:
+                    loading_bar.update(1.0 * (it-1) / total_it)
+
+                # at this point we already have 2 different points from class #1 and 1 point from class #2
+
+                # we have to find the best set of points, that maximize distance between all 
+                # points and the line separating them
+
+                # first we get line_points for this set of points
+                line_points = (p1_1, p1_2)
+                d = distance_between_line_and_point(line_points, p2_1)
+                w, b = line_points_to_full_formula(line_points)
+                res = np.inner(w, np.array([p2_1[0], p2_1[1]])) + b
+                points = sorted([p1_1, p1_2], key=lambda p: p[0])
+                b_e = b
+                if res > 0:
+                    if points[0][1] >= points[1][1]:
+                        b -= d/2
+                        b_e -= d
+                    else:
+                        b += d/2
+                        b_e += d
+                else:
+                    if points[0][1] >= points[1][1]:
+                        b += d/2
+                        b_e += d
+                    else:
+                        b -= d/2
+                        b_e -= d
+                new_line_points = full_formula_to_line_points(w, b)
+                extreme_line_points = full_formula_to_line_points(w, b_e)
+                min_dist = _find_min_distance_between_line_and_all_points(new_line_points, dataset)
+                if min_dist > optimal_min_dist:
+                    optimal_min_dist = min_dist
+                    optimal_line_points = new_line_points
+                    if plot_intermediate_states:
+                        fig, ax = plt.subplots()
+                        ax.scatter(dataset[:,0], dataset[:,1], c=c)
+                        ax.set_xlim(left=0, right=5)
+                        ax.set_ylim(bottom=0, top=5)
+                        ax.axline(line_points[0], line_points[1], color=LINE_COLOR, linewidth=1, label="Extremo #1")
+                        # ax.axline(line_points[0], line_points[1], color=LINE_COLOR, linewidth=1, label="Después de mover")
+                        ax.scatter([p1_1[0], p1_2[0], p2_1[0]], [p1_1[1], p1_2[1], p2_1[1]], c='red')
+                        ax.axline(optimal_line_points[0], optimal_line_points[1], color=LINE_COLOR, linewidth=1, label="Nueva Óptima")
+                        ax.axline(extreme_line_points[0], extreme_line_points[1], color=LINE_COLOR, linewidth=1, label="Extremo #2")
+                        # ax.legend(loc="upper left")
+                        plt.show()
+                    # if plot_intermediate_states:
+                    #     plot_points(dataset, optimal_line_points, limits=([0,5], [0,5]))
+                    print(f'Optimal distance updated: {optimal_min_dist}')
+
+                already_tested_combinations.add(comb)
 
     if show_loading_bar:
         loading_bar.end()

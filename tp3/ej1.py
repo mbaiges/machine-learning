@@ -77,7 +77,7 @@ def punto_a_b(only_dataset:bool = True):
     utils.plot_points(random_dataset, line_points, limits=(x_boundaries, y_boundaries), margin='find')
 
     # True Optimal hyperplane
-    optimal_line_points, dist = utils.optimal_hyperplane(random_dataset, line_points, show_loading_bar=False)
+    optimal_line_points, dist = utils.optimal_hyperplane(random_dataset, line_points, show_loading_bar=False, plot_intermediate_states=True, n_points=10)
     print(f'Optimal Margin: {dist}')
     print(f'True Optimal Line Formula (Simple format) --> {utils.get_line_formula(optimal_line_points, fmt="simple")}')
     print(f'True Optimal Line Formula (Full format) --> {utils.get_line_formula(optimal_line_points, fmt="full")}')
@@ -103,7 +103,7 @@ def punto_a_b(only_dataset:bool = True):
     utils.plot_points(random_dataset, predicted_line_points, limits=(x_boundaries, y_boundaries), margin='find')
 
     # Optimal hyperplane
-    optimal_line_points, dist = utils.optimal_hyperplane(random_dataset, predicted_line_points, show_loading_bar=False)
+    optimal_line_points, dist = utils.optimal_hyperplane(random_dataset, predicted_line_points, show_loading_bar=False, plot_intermediate_states=True, n_points=10)
     print(f'Optimal Margin: {dist}')
     print(f'Optimal Line Formula (Simple format) --> {utils.get_line_formula(optimal_line_points, fmt="simple")}')
     print(f'Optimal Line Formula (Full format) --> {utils.get_line_formula(optimal_line_points, fmt="full")}')
