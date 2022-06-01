@@ -100,6 +100,27 @@ def full_formula_to_line_points(w: np.array, b: float):
     return [[x1, y1], [x2, y2]]
 
 # 
+# Given two line points returns the full formula (w and b)
+# 
+def line_points_to_full_formula(line_points):
+    (x1, y1), (x2, y2) = line_points
+    s = 'missing'
+    if (x1 == x2):
+        # x = x1
+        # 1 x + 0 y + (-x1) = 0
+        w = np.array([1, 0])
+        b = -x1
+    else:
+        # y = slope x + b
+        slope: float = (y2 - y1)/(x2 - x1)
+        b: float = y1 - slope * x1
+        w = np.array([slope, -1])
+        norm = np.linalg.norm(w)
+        w /= norm # normalized
+        b /= norm
+    return w, b
+
+# 
 # Internal function to get discriminator, that decides
 # a tag value (or class) for each point, based on a line
 # given by its points ((x1, y1), (x2, y2)).
@@ -176,6 +197,8 @@ def build_linear_separable_dataset(n: int, x_min: float, x_max: float, y_min: fl
 
 POINTS_COLORS = ["#81b29a", "#e07a5f"]
 LINE_COLOR = "#3d405b"
+MARGIN_COLOR = "#C0C0C0"
+
 # 
 # Plots a scatter of points using Matplotlib, using different
 # colors for the different tagged entries.
@@ -187,7 +210,7 @@ LINE_COLOR = "#3d405b"
 # If a line is known, you can pass ((x1, y1), (x2, y2))
 # as an argument (line_points), and draw the line.
 # 
-def plot_points(dataset: np.array, line_points=None, limits=None, title="Puntos"):
+def plot_points(dataset: np.array, line_points=None, limits=None, title="Puntos", margin=None):
     # we make a copy of the original dataset
     d = np.copy(dataset)
     # we make a map defining a color for each possible tag value
@@ -202,6 +225,17 @@ def plot_points(dataset: np.array, line_points=None, limits=None, title="Puntos"
     if line_points is not None:
         p1, p2 = line_points
         ax.axline(p1, p2, color=LINE_COLOR, linewidth=0.7, label="Hiperplano")
+
+        if margin is not None:
+            margin = _find_min_distance_between_line_and_all_points(line_points, dataset) if margin == 'find' else margin
+            w, b = line_points_to_full_formula(line_points)
+            sup_b = b + margin
+            sup_line_points = full_formula_to_line_points(w, sup_b)
+            ax.axline(sup_line_points[0], sup_line_points[1], color=LINE_COLOR, linewidth=0.7)
+
+            inf_b = b - margin
+            inf_line_points = full_formula_to_line_points(w, inf_b)
+            ax.axline(inf_line_points[0], inf_line_points[1], color=LINE_COLOR, linewidth=0.7)
 
     # if limits are given
     if limits is not None:
@@ -254,7 +288,7 @@ def _closest_points_to_line(dataset: np.array, found_line_points: list, n: int):
 # This solution only works with 2 dimensional problems with
 # 2 different classes.
 # 
-def optimal_hyperplane(dataset: np.array, found_line_points: list, show_loading_bar: bool=False, plot_intermediate_states: bool=False) -> tuple:
+def optimal_hyperplane(dataset: np.array, found_line_points: list, show_loading_bar: bool=False, plot_intermediate_states: bool=False, n_points: int=None) -> tuple:
     optimal_line_points = None
     optimal_min_dist = -math.inf
     
@@ -264,8 +298,9 @@ def optimal_hyperplane(dataset: np.array, found_line_points: list, show_loading_
     c1 = classes[0]
     c2 = classes[1]
 
-    p1 = _closest_points_to_line(dataset[dataset[:,2] == c1][:,:2], found_line_points, 4)
-    p2 = _closest_points_to_line(dataset[dataset[:,2] == c2][:,:2], found_line_points, 4)
+    n_points = n_points if n_points is not None else dataset.shape[0]
+    p1 = _closest_points_to_line(dataset[dataset[:,2] == c1][:,:2], found_line_points, n_points)
+    p2 = _closest_points_to_line(dataset[dataset[:,2] == c2][:,:2], found_line_points, n_points)
 
     # to avoid repeating cases
     already_tested_combinations = set()

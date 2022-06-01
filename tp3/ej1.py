@@ -3,7 +3,7 @@ import numpy as np
 from perceptron import SimplePerceptron
 from sklearn import svm
 
-seed = 59076
+seed = 59077
 
 import utils
 import loss
@@ -54,7 +54,7 @@ def punto_c(only_dataset:bool = True):
 def punto_a_b(only_dataset:bool = True):
     np.random.seed(seed)
     # Parameters
-    n: int = 100
+    n: int = 60
     x_boundaries = (0, 5)
     y_boundaries = x_boundaries
     err_dist_pctg = 0
@@ -74,13 +74,14 @@ def punto_a_b(only_dataset:bool = True):
         return random_dataset, x_boundaries, y_boundaries
     print(f'Line Formula (Simple format) --> {utils.get_line_formula(line_points, fmt="simple")}')
     print(f'Line Formula (Full format) --> {utils.get_line_formula(line_points, fmt="full")}')
-    utils.plot_points(random_dataset, line_points, limits=(x_boundaries, y_boundaries))
+    utils.plot_points(random_dataset, line_points, limits=(x_boundaries, y_boundaries), margin='find')
 
     # True Optimal hyperplane
     optimal_line_points, dist = utils.optimal_hyperplane(random_dataset, line_points, show_loading_bar=False)
-    print(f'True Optimal Line Formula (Simple format) --> {utils.get_line_formula(line_points, fmt="simple")}')
-    print(f'True Optimal Line Formula (Full format) --> {utils.get_line_formula(line_points, fmt="full")}')
-    utils.plot_points(random_dataset, optimal_line_points, limits=(x_boundaries, y_boundaries))
+    print(f'Optimal Margin: {dist}')
+    print(f'True Optimal Line Formula (Simple format) --> {utils.get_line_formula(optimal_line_points, fmt="simple")}')
+    print(f'True Optimal Line Formula (Full format) --> {utils.get_line_formula(optimal_line_points, fmt="full")}')
+    utils.plot_points(random_dataset, optimal_line_points, limits=(x_boundaries, y_boundaries), margin=dist)
 
     # Loss Function based Algorithm 
 
@@ -99,13 +100,14 @@ def punto_a_b(only_dataset:bool = True):
     predicted_line_points = utils.full_formula_to_line_points(w_loss, b_loss)
     print(f'Predicted Line Formula (Simple format) --> {utils.get_line_formula(predicted_line_points, fmt="simple")}')
     print(f'Predicted Line Formula (Full format) --> {utils.get_line_formula(predicted_line_points, fmt="full")}')
-    utils.plot_points(random_dataset, predicted_line_points, limits=(x_boundaries, y_boundaries))
+    utils.plot_points(random_dataset, predicted_line_points, limits=(x_boundaries, y_boundaries), margin='find')
 
     # Optimal hyperplane
     optimal_line_points, dist = utils.optimal_hyperplane(random_dataset, predicted_line_points, show_loading_bar=False)
-    print(f'Optimal Line Formula (Simple format) --> {utils.get_line_formula(line_points, fmt="simple")}')
-    print(f'Optimal Line Formula (Full format) --> {utils.get_line_formula(line_points, fmt="full")}')
-    utils.plot_points(random_dataset, optimal_line_points, limits=(x_boundaries, y_boundaries))
+    print(f'Optimal Margin: {dist}')
+    print(f'Optimal Line Formula (Simple format) --> {utils.get_line_formula(optimal_line_points, fmt="simple")}')
+    print(f'Optimal Line Formula (Full format) --> {utils.get_line_formula(optimal_line_points, fmt="full")}')
+    utils.plot_points(random_dataset, optimal_line_points, limits=(x_boundaries, y_boundaries), margin=dist)
     
     return random_dataset, x_boundaries, y_boundaries
 
@@ -144,7 +146,7 @@ def punto_d(separable_dataset_and_boundaries, non_separable_dataset_and_boundari
 if __name__ == '__main__':
     print("Exercise 1")
 
-    separable_dataset_and_boundaries = punto_a_b(only_dataset=True)
-    non_separable_dataset_and_boundaries = punto_c(only_dataset=True)
+    separable_dataset_and_boundaries = punto_a_b(only_dataset=False)
+    # non_separable_dataset_and_boundaries = punto_c(only_dataset=True)
 
-    punto_d(separable_dataset_and_boundaries, non_separable_dataset_and_boundaries)
+    # punto_d(separable_dataset_and_boundaries, non_separable_dataset_and_boundaries)
