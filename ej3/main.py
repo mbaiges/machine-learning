@@ -37,10 +37,14 @@ def stats(mat, classes):
     acc = sum([m.accuracy() for m in st.values()]) / mat.shape[0] # promediamos accuracy
     return acc, st
 
-def simple_regression(df, division_iterations, iterations):
+def simple_regression(df, division_iterations, iterations, bins_dist):
     y = df[CSV_HEADER[-1]].to_numpy()
-    bins = utils.bins(y, alg='dist', options={'dist': 6})
+    bins = utils.bins(y, alg='dist', options={'dist': bins_dist})
     for field in CSV_HEADER[:-1]:
+        print(f"    ------------")
+        print(f"    Using only {field}")
+        print(f"    ------------")
+
         x = np.array([df[field].to_numpy()]).T
 
         results = []
@@ -60,7 +64,7 @@ def simple_regression(df, division_iterations, iterations):
                 y_pred_binned = utils.arr_binning(bins, y_pred)
                 test_bins = set(y_test_binned)
                 pred_bins = set(y_pred_binned)
-                used_bins = test_bins if len(test_bins) >= len(pred_bins) else pred_bins
+                used_bins = test_bins.union(pred_bins)
 
                 # Confusion Matrix
                 mat = confusion_matrix(y_test_binned, y_pred_binned)
@@ -113,7 +117,9 @@ def simple_regression(df, division_iterations, iterations):
         # Best case
         x_train, x_test, y_train, y_test = cfg = best['cfg']
         y_pred = best['model'].predict(x_test)
+        score = best['model'].score(x_test, y_test)
         print(f"Best accuracy: {best['acc']:.3f}")
+        print(f"Best score: {score:.3f}")
 
         # Binning
         y_test_binned = utils.arr_binning(bins, y_test)
@@ -131,11 +137,11 @@ def simple_regression(df, division_iterations, iterations):
         plt.show()
         print(linear.coef_)
 
-def multiple_regression(df, division_iterations, iterations):
+def multiple_regression(df, division_iterations, iterations, bins_dist):
     y = df[CSV_HEADER[-1]].to_numpy()
     x = df[CSV_HEADER[:-1]].to_numpy()
 
-    bins = utils.bins(y, alg='dist', options={'dist': 6})
+    bins = utils.bins(y, alg='dist', options={'dist': bins_dist})
 
     results = []
     for i in range(iterations):
@@ -154,7 +160,7 @@ def multiple_regression(df, division_iterations, iterations):
             y_pred_binned = utils.arr_binning(bins, y_pred)
             test_bins = set(y_test_binned)
             pred_bins = set(y_pred_binned)
-            used_bins = test_bins if len(test_bins) >= len(pred_bins) else pred_bins
+            used_bins = test_bins.union(pred_bins)
 
             # Confusion Matrix
             mat = confusion_matrix(y_test_binned, y_pred_binned)
@@ -207,7 +213,9 @@ def multiple_regression(df, division_iterations, iterations):
     # Best case
     x_train, x_test, y_train, y_test = cfg = best['cfg']
     y_pred = best['model'].predict(x_test)
+    score = best['model'].score(x_test, y_test)
     print(f"Best accuracy: {best['acc']:.3f}")
+    print(f"Best score: {score:.3f}")
 
     # Binning
     y_test_binned = utils.arr_binning(bins, y_test)
@@ -240,9 +248,16 @@ if __name__ == '__main__':
 
     division_iterations = 10
     iterations = 20
-    simple_regression(df, division_iterations, iterations)
+    
+    bins_dist = 3
+    print(f"Using bins distance: {bins_dist}")
+
+    print(f"-----------------------------")
+    print(f"Single Regression")
+    print(f"-----------------------------")
+    simple_regression(df, division_iterations, iterations, bins_dist)
 
     print(f"-----------------------------")
     print(f"Multiple Regression")
     print(f"-----------------------------")
-    multiple_regression(df, division_iterations, iterations)
+    multiple_regression(df, division_iterations, iterations, bins_dist)
