@@ -236,7 +236,7 @@ def e(x: np.array, y: np.array):
     log_medium("Sick people")
     sick_idxs = np.argwhere(ry[:] == 1)[:,0]
     sick_x    = std_x[sick_idxs]
-    print(sick_idxs.shape)
+    log(sick_idxs.shape)
     
     km, hc, ko = unsupervised(
         sick_x, 
@@ -253,7 +253,7 @@ def e(x: np.array, y: np.array):
     log_medium("Non sick people")
     non_sick_idxs = np.argwhere(ry[:] == 0)[:,0]
     non_sick_x    = std_x[non_sick_idxs]
-    print(non_sick_x.shape)
+    log(non_sick_x.shape)
 
     km, hc, ko = unsupervised(
         non_sick_x, 
