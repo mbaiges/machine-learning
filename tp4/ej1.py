@@ -101,9 +101,10 @@ def analysis(df: pd.DataFrame) -> None:
 def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
     ## KMeans
     log_short("K-Means")
-    km = KMeans(k=kmeans["k"], seed=seed)
+    km = KMeans(k=kmeans["k"], init_alg=kmeans["init_alg"], seed=seed)
     it = km.train(x, iterations=kmeans["iterations"], show_loading_bar=kmeans["show_loading_bar"])
     log(f"Iterations: {it}")
+    log(f"Clusters: {km.clusters}")
 
     ## Hierarchical Clustering
     log_short("Hierarchical Clustering")
@@ -228,6 +229,7 @@ def e(x: np.array, y: np.array):
 
     kmeans = {
         "k":                3,
+        "init_alg":         "distant",
         "iterations":       1000,
         "show_loading_bar": True
     }
