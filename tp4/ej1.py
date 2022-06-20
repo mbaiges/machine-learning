@@ -176,12 +176,12 @@ def d(logit_res, scaler):
     std_age, std_dur, std_chol = stds[0,0], stds[0,1], stds[0,2]
     logit = c_const + c_age * std_age + c_chol * std_chol
     odds  = math.exp(logit)
-    log_short(f"Odds: {odds}")
+    log(f"Odds: {odds}")
     # p/(1-p) = e^(c_const + c_age * age + c_chol * chol) = odds
     # p     =  odds * (1 - p)
     # (1 + odds) * p = odds
     p = odds/(1+odds)
-    log_short(f"Probability: {p}")
+    log(f"Probability: {p}")
 
 def e():
     pass
