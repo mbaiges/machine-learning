@@ -77,3 +77,35 @@ def bars(x: np.array, title: str) -> None:
     plt.title(label=title)
     plt.bar(x, y)
     plt.show()
+
+#### Loading Bar ####
+
+class LoadingBar:
+
+    def __init__(self, width: int=20):
+        self.width = 20
+
+    def init(self):
+        print("")
+        self.update(0.0)
+
+    def end(self):
+        self.update(1.0)
+        print("")
+    
+    def update(self, percentage: float):
+        bar = "["
+        for b in range(0, self.width):
+            p = b/self.width
+            p_next = (b+1)/self.width
+            p_mid = (p+p_next)/2
+            char = ' '
+            if percentage > p:
+                if percentage < p_mid:
+                    char = '▄'
+                else:
+                    char = '█'
+                    
+            bar += char
+        bar += f"] ({percentage*100:05.2f}%)"
+        print(f"\r{bar}", end = '')

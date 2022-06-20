@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 
 import utils
 import models
-import kmeans
-import hclustering
-import kohonen
+from kmeans import KMeans
+from hclustering import HClustering
+from kohonen import Kohonen
 
 seed = 59076
 
@@ -96,18 +96,20 @@ def analysis(df: pd.DataFrame) -> None:
 
 def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
     ## KMeans
-    kmeans      = kmeans.KMeans(k=kmeans["k"])
-    kmeans.train(x)
+    km = KMeans(k=kmeans["k"], seed=seed)
+    km.train(x, iterations=kmeans["iterations"])
 
     ## Hierarchical Clustering
-    hclustering = hclustering.HClustering()
-    hclustering.train(x)
+    hc = None # to avoid defining yet
+    # hc = HClustering()
+    # hc.train(x)
 
     ## Kohonen
-    kohonen     = kohonen.Kohonen()
-    kohonen.train(x)
+    ko = None # to avoid defining yet
+    # ko = Kohonen()
+    # ko.train(x)
 
-    return kmeans, hclustering, kohonen
+    return km, hc, ko
 
 ###### Exercise Points ######
 
@@ -184,7 +186,7 @@ def c(tr_x: np.array, tr_y: np.array, ts_x: np.array, ts_y: np.array):
     b(w_tr_x, w_tr_y, w_ts_x, w_ts_y)
     pass
 
-def d(logit_res, scaler):
+def d(logit_res, std_scaler):
     print(logit_res.summary())
     
     c_const = 0.7163
@@ -216,17 +218,44 @@ def e(x: np.array, y: np.array):
     std_scaler  = StandardScaler()
     std_x       = std_scaler.fit_transform(X=rx)
 
+    kmeans_k = 3
+    kmeans_max_iterations = 1000
+
     # Sick people
     sick_idxs = np.argwhere(ry[:] == 1)
     sick_x    = std_x[sick_idxs] 
     
-    kmeans, hclustering, kohonen = unsupervised(sick_x, kmeans={"k": 3}, hclustering={"param": "asd"}, kohonen={"param": "e"})
+    kmeans, hclustering, kohonen = unsupervised(
+        sick_x, 
+        kmeans={
+            "k":          kmeans_k, 
+            "iterations": kmeans_max_iterations
+        }, 
+        hclustering={
+            "param": "asd"
+        }, 
+        kohonen={
+            "param": "e"
+        }
+    )
 
     # Non sick people
     non_sick_idxs = np.argwhere(ry[:] == 1)
     non_sick_x    = std_x[non_sick_idxs] 
 
-    kmeans, hclustering, kohonen = unsupervised(non_sick_x)
+    # kmeans, hclustering, kohonen = unsupervised(
+    #     non_sick_x, 
+    #     kmeans={
+    #         "k":          kmeans_k, 
+    #         "iterations": kmeans_max_iterations
+    #     }, 
+    #     hclustering={
+    #         "param": "asd"
+    #     }, 
+    #     kohonen={
+    #         "param": "e"
+    #     }
+    # )
 
 ###### Main ######
 
@@ -246,11 +275,11 @@ if __name__ == '__main__':
 
     # Exercise a
     log_long("Exercise a")
-    (tr_x, tr_y), (ts_x, ts_y) = a(x, y)
+    # (tr_x, tr_y), (ts_x, ts_y) = a(x, y)
 
     # Exercise b
     log_long("Exercise b")
-    logit_res, std_scaler = b(tr_x, tr_y, ts_x, ts_y)
+    # logit_res, std_scaler = b(tr_x, tr_y, ts_x, ts_y)
 
     # Exercise c
     log_long("Exercise c")
@@ -258,8 +287,8 @@ if __name__ == '__main__':
 
     # Exercise d
     log_long("Exercise d")
-    d(logit_res, std_scaler)
+    # d(logit_res, std_scaler)
     
     # Exercise e
     log_long("Exercise e")
-    e(x, y)
+    e(df[NUM_VARS].to_numpy(), y)
