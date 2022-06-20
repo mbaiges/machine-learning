@@ -105,6 +105,10 @@ def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
     it = km.train(x, iterations=kmeans["iterations"], show_loading_bar=kmeans["show_loading_bar"])
     log(f"Iterations: {it}")
     log(f"Clusters: {km.clusters}")
+    clustered = km.clusterize(x)
+    print(f"Clustered: {list(map(lambda c: len(c), clustered))}")
+    km.plot3d(x, labels=['Age', 'Symptoms Duration', 'Cholesterol'])
+    plt.show()
 
     ## Hierarchical Clustering
     log_short("Hierarchical Clustering")
