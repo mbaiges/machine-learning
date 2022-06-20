@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import random
 import math
+from sklearn.cluster import k_means
 
 import statsmodels.api as sm
 from sklearn.preprocessing import StandardScaler
@@ -35,13 +36,16 @@ ALL_VARS = [ATT_SEX,ATT_AGE,ATT_CAD_DUR,ATT_CHOLESTE]
 
 SIGDZ = "sigdz"
 
-LOG_LONG_DELIMITER = "---------------------"
-LOG_SHORT_DELIMITER = "---------"
+LOG_LONG_DELIMITER   = "------------------------------------"
+LOG_MEDIUM_DELIMITER = "------------------------"
+LOG_SHORT_DELIMITER  = "----------------"
 
 ###### Logs ######
 
 def log_long(s: str) -> None:
     utils.log(s, LOG_LONG_DELIMITER)
+def log_medium(s: str) -> None:
+    utils.log(s, LOG_MEDIUM_DELIMITER)
 def log_short(s: str) -> None:
     utils.log(s, LOG_SHORT_DELIMITER)
 def log(s: str) -> None:
@@ -96,15 +100,19 @@ def analysis(df: pd.DataFrame) -> None:
 
 def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
     ## KMeans
+    log_short("K-Means")
     km = KMeans(k=kmeans["k"], seed=seed)
-    km.train(x, iterations=kmeans["iterations"])
+    it = km.train(x, iterations=kmeans["iterations"], show_loading_bar=kmeans["show_loading_bar"])
+    log(f"Iterations: {it}")
 
     ## Hierarchical Clustering
+    log_short("Hierarchical Clustering")
     hc = None # to avoid defining yet
     # hc = HClustering()
     # hc.train(x)
 
     ## Kohonen
+    log_short("Kohonen")
     ko = None # to avoid defining yet
     # ko = Kohonen()
     # ko.train(x)
@@ -218,20 +226,21 @@ def e(x: np.array, y: np.array):
     std_scaler  = StandardScaler()
     std_x       = std_scaler.fit_transform(X=rx)
 
-    kmeans_k = 3
-    kmeans_max_iterations = 1000
+    kmeans = {
+        "k":                3,
+        "iterations":       1000,
+        "show_loading_bar": True
+    }
 
     # Sick people
+    log_medium("Sick people")
     sick_idxs = np.argwhere(ry[:] == 1)[:,0]
     sick_x    = std_x[sick_idxs]
-    print(sick_x.shape)
+    print(sick_idxs.shape)
     
-    kmeans, hclustering, kohonen = unsupervised(
+    km, hc, ko = unsupervised(
         sick_x, 
-        kmeans={
-            "k":          kmeans_k, 
-            "iterations": kmeans_max_iterations
-        }, 
+        kmeans=kmeans, 
         hclustering={
             "param": "asd"
         }, 
@@ -241,23 +250,21 @@ def e(x: np.array, y: np.array):
     )
 
     # Non sick people
-    non_sick_idxs = np.argwhere(ry[:] == 1)[:,0]
+    log_medium("Non sick people")
+    non_sick_idxs = np.argwhere(ry[:] == 0)[:,0]
     non_sick_x    = std_x[non_sick_idxs]
     print(non_sick_x.shape)
 
-    # kmeans, hclustering, kohonen = unsupervised(
-    #     non_sick_x, 
-    #     kmeans={
-    #         "k":          kmeans_k, 
-    #         "iterations": kmeans_max_iterations
-    #     }, 
-    #     hclustering={
-    #         "param": "asd"
-    #     }, 
-    #     kohonen={
-    #         "param": "e"
-    #     }
-    # )
+    km, hc, ko = unsupervised(
+        non_sick_x, 
+        kmeans=kmeans, 
+        hclustering={
+            "param": "asd"
+        }, 
+        kohonen={
+            "param": "e"
+        }
+    )
 
 ###### Main ######
 

@@ -88,10 +88,12 @@ class LoadingBar:
     def init(self):
         print("")
         self.update(0.0)
+        return self
 
     def end(self):
         self.update(1.0)
         print("")
+        return self
     
     def update(self, percentage: float):
         bar = "["
@@ -109,3 +111,4 @@ class LoadingBar:
             bar += char
         bar += f"] ({percentage*100:05.2f}%)"
         print(f"\r{bar}", end = '')
+        return self
