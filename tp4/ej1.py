@@ -1,9 +1,12 @@
 import pandas as pd
 import numpy as np
+import random
 
 import utils
 
 seed = 59076
+
+RANDOM = random.Random(seed)
 
 FILEPATH = 'acath.csv'
 
@@ -30,6 +33,15 @@ def log(s: str) -> None:
 
 ###### Helpers ######
 
+def shuffle(x: np.array, y: np.array, seed: int):
+    r = random.Random(seed)
+    shuffled_idxs = [i for i in range(x.shape[0])]
+    r.shuffle(shuffled_idxs)
+    return np.array([x[i] for i in shuffled_idxs]), np.array([y[i] for i in shuffled_idxs])
+
+# def random_split(df: pd.DataFrame, test_percentage: float, index: int):
+#     size = 
+
 def analysis(df: pd.DataFrame) -> None:
 
     # Sex
@@ -53,6 +65,7 @@ def analysis(df: pd.DataFrame) -> None:
     sigdz = df[ATT_SIGDZ].to_numpy()
     utils.bars(sigdz, title=ATT_SIGDZ)
 
+
 ###### Main ######
 
 if __name__ == '__main__':
@@ -61,4 +74,10 @@ if __name__ == '__main__':
     df = df.astype(object).replace(np.nan, None)
     log_long(f"{df.size} rows loaded")
 
-    analysis(df)
+    # analysis(df)
+
+    x = df[[ATT_SEX, ATT_AGE, ATT_CAD_DUR, ATT_CHOLESTE]].to_numpy()
+    y = df[ATT_SIGDZ].to_numpy()
+
+    log(x)
+    log(y)
