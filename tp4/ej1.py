@@ -7,7 +7,14 @@ seed = 59076
 
 FILEPATH = 'acath.csv'
 
-CSV_HEADER = ["sex","age","cad.dur","choleste","sigdz","tvdlm"]
+ATT_SEX      = "sex"
+ATT_AGE      = "age"
+ATT_CAD_DUR  = "cad.dur"
+ATT_CHOLESTE = "choleste"
+ATT_SIGDZ    = "sigdz"
+ATT_TVLM     = "tvlm"
+
+CSV_HEADER = [ATT_SEX,ATT_AGE,ATT_CAD_DUR,ATT_CHOLESTE,ATT_SIGDZ,ATT_TVLM]
 
 LOG_LONG_DELIMITER = "---------------------"
 LOG_SHORT_DELIMITER = "---------"
@@ -25,25 +32,33 @@ def log(s: str) -> None:
 
 def analysis(df: pd.DataFrame) -> None:
 
-    # Credit amount
-    credit_amounts = df[CREDIT_AMOUNT].to_numpy()
-    utils.hist(credit_amounts, title=CREDIT_AMOUNT)
+    # Sex
+    sexs = df[ATT_SEX].to_numpy()
+    utils.bars(sexs, title=ATT_SEX)
 
     # Ages
-    ages = df[AGE].to_numpy()
-    utils.hist(ages, title=AGE)
+    ages = df[ATT_AGE].to_numpy()
+    utils.hist(ages, title=ATT_AGE)
 
-    # PCA para ver como se ubican en un diagrama de biplot???????? Si sale super rapido nomas
+    # Symptoms Duration
+    durations = df[ATT_CAD_DUR].to_numpy()
+    utils.hist(durations, title=ATT_CAD_DUR) # Poisson? Pienso que tiene sentido
 
-    # Creditability
-    creditabilities = df[CREDITABILITY].to_numpy()
-    utils.bars(creditabilities, title=CREDITABILITY)
+    # Cholesterol
+    chols = df[ATT_CHOLESTE].to_numpy()
+    filter(lambda c: c is not None, chols) # Filtering None
+    utils.hist(chols, title=ATT_CHOLESTE)
+
+    # SIGDZ
+    sigdz = df[ATT_SIGDZ].to_numpy()
+    utils.bars(sigdz, title=ATT_SIGDZ)
 
 ###### Main ######
 
 if __name__ == '__main__':
 
     df = pd.read_csv(FILEPATH, sep=';')
+    df = df.astype(object).replace(np.nan, None)
     log_long(f"{df.size} rows loaded")
 
     analysis(df)
