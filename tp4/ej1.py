@@ -11,6 +11,9 @@ import matplotlib.pyplot as plt
 
 import utils
 import models
+import kmeans
+import hclustering
+import kohonen
 
 seed = 59076
 
@@ -61,6 +64,13 @@ def random_split(x: np.array, y: np.array, test_percentage: float, index: int):
     top = (index+1)*size if (index+1)*size < x.shape[0] else (x.shape[0]-1)
     return (np.concatenate((x[0:index*size],x[top:x.shape[0]]), axis=0), np.concatenate((y[0:index*size],y[top:y.shape[0]]), axis=0)), (x[index*size:top], y[index*size:top])
 
+def random_pick(x: np.array, y: np.array, size: int, seed: int):
+    r = random.Random(seed)
+    shuffled_idxs = [i for i in range(x.shape[0])]
+    r.shuffle(shuffled_idxs)
+    shuffled_idxs = shuffled_idxs[:size]
+    return np.array([x[i] for i in shuffled_idxs]), np.array([y[i] for i in shuffled_idxs])
+
 def analysis(df: pd.DataFrame) -> None:
 
     # Sex
@@ -84,7 +94,20 @@ def analysis(df: pd.DataFrame) -> None:
     sigdz = df[ATT_SIGDZ].to_numpy()
     utils.bars(sigdz, title=ATT_SIGDZ)
 
+def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
+    ## KMeans
+    kmeans      = kmeans.KMeans(k=kmeans["k"])
+    kmeans.train(x)
 
+    ## Hierarchical Clustering
+    hclustering = hclustering.HClustering()
+    hclustering.train(x)
+
+    ## Kohonen
+    kohonen     = kohonen.Kohonen()
+    kohonen.train(x)
+
+    return kmeans, hclustering, kohonen
 
 ###### Exercise Points ######
 
@@ -183,8 +206,27 @@ def d(logit_res, scaler):
     p = odds/(1+odds)
     log(f"Probability: {p}")
 
-def e():
-    pass
+def e(x: np.array, y: np.array):
+    
+    pctg = 0.4
+    n = math.floor(x.shape[0]*pctg)
+    rx, ry = random_pick(x, y, n, seed)
+    
+
+    std_scaler  = StandardScaler()
+    std_x       = std_scaler.fit_transform(X=rx)
+
+    # Sick people
+    sick_idxs = np.argwhere(ry[:] == 1)
+    sick_x    = std_x[sick_idxs] 
+    
+    kmeans, hclustering, kohonen = unsupervised(sick_x, kmeans={"k": 3}, hclustering={"param": "asd"}, kohonen={"param": "e"})
+
+    # Non sick people
+    non_sick_idxs = np.argwhere(ry[:] == 1)
+    non_sick_x    = std_x[non_sick_idxs] 
+
+    kmeans, hclustering, kohonen = unsupervised(non_sick_x)
 
 ###### Main ######
 
@@ -220,4 +262,4 @@ if __name__ == '__main__':
     
     # Exercise e
     log_long("Exercise e")
-    e()
+    e(x, y)
