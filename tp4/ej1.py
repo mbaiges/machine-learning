@@ -222,8 +222,9 @@ def e(x: np.array, y: np.array):
     kmeans_max_iterations = 1000
 
     # Sick people
-    sick_idxs = np.argwhere(ry[:] == 1)
-    sick_x    = std_x[sick_idxs] 
+    sick_idxs = np.argwhere(ry[:] == 1)[:,0]
+    sick_x    = std_x[sick_idxs]
+    print(sick_x.shape)
     
     kmeans, hclustering, kohonen = unsupervised(
         sick_x, 
@@ -240,8 +241,9 @@ def e(x: np.array, y: np.array):
     )
 
     # Non sick people
-    non_sick_idxs = np.argwhere(ry[:] == 1)
-    non_sick_x    = std_x[non_sick_idxs] 
+    non_sick_idxs = np.argwhere(ry[:] == 1)[:,0]
+    non_sick_x    = std_x[non_sick_idxs]
+    print(non_sick_x.shape)
 
     # kmeans, hclustering, kohonen = unsupervised(
     #     non_sick_x, 
@@ -291,4 +293,5 @@ if __name__ == '__main__':
     
     # Exercise e
     log_long("Exercise e")
-    e(df[NUM_VARS].to_numpy(), y)
+    num_x = df[NUM_VARS].to_numpy()
+    e(num_x, y)

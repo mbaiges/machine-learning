@@ -6,10 +6,10 @@ import utils
 # Cluster initialization methods
 
 def rand(x: np.array, k: int, seed: int) -> np.array:
-    min = np.min(x)
-    max = np.max(x)
-    print(min, max)
-    return [np.zeros(x[0].shape) for i in range(k)]
+    r = random.Random(seed)
+    min = x.min(axis=0)
+    max = x.max(axis=0)
+    return [np.array([(random.random()*(max[j] - min[j]) + min[j]) for j in range(x.shape[1])]) for i in range(k)]
 
 def samples(x: np.array, k: int, seed: int) -> np.array:
     r = random.Random(seed)
@@ -54,7 +54,6 @@ cluster_init_algs = {
     "distant": distant
 }
 
-
 class KMeans:
     def __init__(self, k: int, init_alg: str='random', seed: int=0) -> None:
         self.k         = k
@@ -67,29 +66,32 @@ class KMeans:
         return cluster_init_algs.get(l_init_alg, cluster_init_algs['random']) # default is rand
 
     def _initialize_clusters(self, x: np.array) -> None:
-        self.clusters = self._init_alg(x, self.k, self.seed)
+        self.clusters       = self._init_alg(x, self.k, self.seed)
+        self._last_clusters = None
 
     # Stop condition
     def _stop(self) -> bool:
-        return False
+        return self._last_clusters is not None and set(self.clusters) == set(self._last_clusters)
 
     def train(self, x: np.array, iterations: int, show_loading_bar: bool=False) -> None:
         self._initialize_clusters(x)
-
-        return None
+        print(f"Initial Clusters: {self.clusters}")
         
         if show_loading_bar:
             loading_bar = utils.LoadingBar()
             loading_bar = loading_bar.init()
 
         it = 0
-        while not self._stop() and it < iterations:
-            if show_loading_bar:
-                loading_bar = loading_bar.update(1.0*it/iterations)
+        # while not self._stop() and it < iterations:
+        #     if show_loading_bar:
+        #         loading_bar = loading_bar.update(1.0*it/iterations)
 
+        #     self._last_clusters = self.clusters
 
+        #     self.clusters = self.clusters
 
-            it += 1
+        #     it += 1
 
         if show_loading_bar:
             loading_bar = loading_bar.end()
+        print(f"KMeans iterations: {it}")
