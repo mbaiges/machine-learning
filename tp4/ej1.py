@@ -98,6 +98,17 @@ def analysis(df: pd.DataFrame) -> None:
     sigdz = df[ATT_SIGDZ].to_numpy()
     utils.bars(sigdz, title=ATT_SIGDZ)
 
+def _compare_hclustering(x: np.array, hclustering: dict):
+    criterias = ['max','min','mean','center']
+    for criteria in criterias:
+        hc = HClustering(criteria=criteria)
+        hc.train(x)
+        plt.figure()
+        plt.title(f"Hierarchical Clustering with {criteria} criteria")
+        hc.dendrogram()
+    plt.show()
+
+    
 def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
     ## KMeans
     log_short("K-Means")
@@ -107,14 +118,13 @@ def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
     log(f"Clusters: {km.clusters}")
     clustered = km.clusterize(x)
     print(f"Clustered: {list(map(lambda c: len(c), clustered))}")
-    km.plot3d(x, labels=['Age', 'Symptoms Duration', 'Cholesterol'])
-    plt.show()
+    # km.plot3d(x, labels=['Age', 'Symptoms Duration', 'Cholesterol'])
+    # plt.show()
 
     ## Hierarchical Clustering
     log_short("Hierarchical Clustering")
     hc = None # to avoid defining yet
-    # hc = HClustering()
-    # hc.train(x)
+    _compare_hclustering(x, hclustering)
 
     ## Kohonen
     log_short("Kohonen")
