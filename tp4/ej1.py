@@ -124,6 +124,53 @@ def _compare_kmeans_initializations(x: np.array, kmeans: dict):
         # km.plot3d(x, labels=['Age', 'Symptoms Duration', 'Cholesterol'])
     plt.show()
 
+def cross_validation(x, t, k=20, logit_max_iter=100):
+    std_scaler  = StandardScaler()
+    std_x       = std_scaler.fit_transform(X=x)
+    _std_x       = sm.add_constant(std_x)
+    total = x.shape[0]
+    amount = int(total/k)
+    acum = 0
+    new_total = total
+    max_ = math.inf
+    best_x_train, best_t_train, best_x_test, best_t_test  = None, None, None, None
+    counter = 0
+    if total % amount != 0:
+        new_total -= amount ## in order to add extra cases to last test set
+        k -= 1
+    for i in range(0, new_total, amount):
+        if(i + amount > new_total): ## in order to add extra cases to last test set
+            std_x_test = _std_x[i:]
+            std_x_train = _std_x[0:i]
+            x_test = x[i:]
+            t_test = t[i:]
+            x_train = x[0:i]
+            t_train = t[0:i]
+            
+        else: 
+            std_x_test = _std_x[i:i+amount]
+            std_x_train = np.concatenate((_std_x[0:i], _std_x[i+amount:]), axis=0)
+            x_test = x[i:i+amount]
+            t_test = t[i:i+amount]
+            x_train = np.concatenate((x[0:i], x[i+amount:]), axis=0)
+            t_train = np.concatenate((t[0:i], t[i+amount:]), axis=0)
+        # if not (len(set(t_test)) == len(set(t_train)) == len(CATEGORIES)):
+        #     # print(f"Skipping at K: {k}, with i: {i}")
+        #     continue
+        counter += 1
+        logit_mod   = sm.Logit(endog = t_train, exog=std_x_train)
+        logit_res   = logit_mod.fit(method='newton', maxiter=logit_max_iter, disp=0)
+        err = 0
+        res = logit_res.predict(std_x_test)
+        for r, cat in zip(res, t_test):
+            r = round(r)
+            err += 1 if cat != r else 0
+        if(err < max_):
+            max_ = err / x_test.shape[0]
+            best_x_train, best_t_train, best_x_test, best_t_test  = x_train, t_train, x_test, t_test
+        acum += err
+    return (best_x_train, best_t_train, best_x_test, best_t_test), acum / counter, max_ 
+
 def _compare_hclustering(x: np.array, hclustering: dict):
     criterias = ['max','min','mean','center']
     for criteria in criterias:
@@ -162,29 +209,51 @@ def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
     ## Hierarchical Clustering
     log_short("Hierarchical Clustering")
     hc = None # to avoid defining yet
-    # _compare_hclustering(x, hclustering)
+    _compare_hclustering(x, hclustering)
 
     ## Kohonen
     log_short("Kohonen")
     ko = Kohonen(x, grid_dimension=kohonen["grid_dimension"], radius=kohonen["radius"], input_weights=kohonen["input_weights"], learning_rate=kohonen["learning_rate"])
-    # ko.train(kohonen["epochs"])
-    # plt.show()
+    ko.train(kohonen["epochs"])
+    plt.show()
 
     return km, hc, ko
 
 ###### Exercise Points ######
 
 def a(x: np.array, y: np.array):
-    sx, sy = shuffle(x, y, seed)
+    
+    iterations = 100
+    k_limits = (55, 65)
+    k_step = 5
+    logit_max_iter = 100
 
-    ts_pctg = 0.4
+    max__ = math.inf
+    best_k = None
+    best_x_train, best_t_train, best_x_test, best_t_test = None, None, None, None
 
-    r = random.Random(seed)
-    combinations = split_combinations(sx, sy, ts_pctg) # max posible index to call random_split with
-    idx = r.randint(0, combinations-1)
-    (tr_x, tr_y), (ts_x, ts_y) = random_split(sx, sy, ts_pctg, idx) # purposely selecting index 0
+    loading_bar = utils.LoadingBar()
+    loading_bar.init()
+    it = 0
+    total_iterations = int(iterations*((k_limits[1]-k_limits[0])/k_step))
+    for i in range(iterations):
+        sx, sy = shuffle(x, y, seed+i)
+        for k in range(k_limits[0], k_limits[1]+k_step, k_step):
+            loading_bar.update(1.0*it/total_iterations)
+            (_best_x_train, _best_t_train, _best_x_test, _best_t_test), error_pctg, max_ = cross_validation(x=sx, t=sy, k=k, logit_max_iter=logit_max_iter)
+            if max_ < max__:
+                best_x_train, best_t_train, best_x_test, best_t_test = _best_x_train, _best_t_train, _best_x_test, _best_t_test
+                best_k = k
+                max__ = max_
+            it += 1
+    loading_bar.end()
 
-    return (tr_x, tr_y), (ts_x, ts_y)
+    log_medium(f"Cross Validation")
+    log_short(f"Best x test shape = {best_x_test.shape}")
+    log_short(f"Best k = {best_k}")
+    log_short(f"Best error: {max__}")
+    return (best_x_train, best_t_train), (best_x_test, best_t_test)
+
 
 def b(tr_x: np.array, tr_y: np.array, ts_x: np.array, ts_y: np.array):
     s_tr_x      = np.delete(tr_x, 0, 1)
@@ -355,7 +424,7 @@ if __name__ == '__main__':
 
     # Analysis
     adf = df.astype(object).replace(np.nan, None)
-    analysis(adf)
+    # analysis(adf)
 
     df = df.dropna().reset_index(drop=True) #TODO: que hacemos con esto, media, neurona, knn
 
@@ -365,11 +434,14 @@ if __name__ == '__main__':
     print(f"Y SHAPE: {y.shape}")
     # Exercise a
     log_long("Exercise a")
-    # (tr_x, tr_y), (ts_x, ts_y) = a(x, y)
+    (tr_x, tr_y), (ts_x, ts_y) = a(x, y)
 
+    # (best_x_train, best_t_train, best_x_test, best_t_test), error_pctg, max_ = cross_validation(x=df[NUM_VARS].to_numpy(), t=y)
+    # print(f"BEST X TEST SHAPE: {best_x_test.shape}")
+    # print(f"MAX error is: {max_}")
     # Exercise b
     log_long("Exercise b")
-    # logit_res, std_scaler = b(tr_x, tr_y, ts_x, ts_y)
+    logit_res, std_scaler = b(tr_x, tr_y, ts_x, ts_y)
 
     # Exercise c
     log_long("Exercise c")

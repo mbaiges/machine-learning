@@ -1,5 +1,5 @@
 import utils
-
+import time
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from scipy.cluster.hierarchy import dendrogram
@@ -42,6 +42,7 @@ class HClustering:
         return distance_matrix
     
     def train(self, x, show_loading_bar: bool=True) -> None:
+        start = time.time()
         def first_elem(e):
             return e[0]
         
@@ -96,8 +97,13 @@ class HClustering:
             distances.extend(new_distances)
             distances = sorted(distances, key=first_elem)
             it += 1
-
+        
+        if show_loading_bar:
+            loading_bar.end()
+            
         self.linkage_resp = np.array(linkage_resp)
+        end = time.time()
+        print(f"HClustering train duration: {start - end} s")
 
     def dendrogram(self) -> None:
         dendrogram(self.linkage_resp)
