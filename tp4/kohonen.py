@@ -1,8 +1,13 @@
+import utils
+
 import math
 import random
+import operator
+
 import numpy as np
 import matplotlib.pyplot as plt
-import operator
+from sklearn.preprocessing import StandardScaler
+
 # initialize k, eta, w, r
 # select row 
 # search winning neuron 
@@ -21,6 +26,8 @@ class KohonenNeuron:
 
 class Kohonen:
     def __init__(self, training_set, grid_dimension, radius, input_weights, learning_rate=1):
+        self.scaler = StandardScaler()
+        training_set       = self.scaler.fit_transform(X=training_set)
         self.training_set = training_set
         self.input_dimension = len(training_set[0])
         self.grid_dimension = grid_dimension
@@ -42,11 +49,16 @@ class Kohonen:
                     w = input_.copy()
                 self.neurons[i][j] = KohonenNeuron(w)
 
-    def train(self,epochs):
+    def train(self,epochs, show_loading_bar: bool=True):
         tr_length = len(self.training_set)
         activations = np.zeros((self.grid_dimension, self.grid_dimension))
 
+        if show_loading_bar:
+            loading_bar = utils.LoadingBar()
+            loading_bar.init()
         for i in range(epochs):
+            if show_loading_bar:
+                loading_bar = loading_bar.update(1.0*i/epochs)
             aux_training = self.training_set.copy()
             self.learning_rate = 1                                          # restart eta
             aux_radius = self.radius
@@ -142,15 +154,3 @@ class Kohonen:
                 u_matrix[i][j] /= len(directions)
         return u_matrix
 
-
-def run_kohonen(training_set, grid_dimension, radius,learning_rate,epochs, use_input_as_weights,countries):
-    kohonen = Kohonen(training_set, grid_dimension, radius,use_input_as_weights,learning_rate)
-    last_activations = kohonen.train(epochs)
-    country_activations = []
-    for country,activations in zip(countries,last_activations):
-        country_activations.append((country, *activations))
-    country_activations = sorted(country_activations, key = operator.itemgetter(1, 2))
-
-    for country_activation in country_activations:
-        print(f"Country: {country_activation[0]} activated neuron({country_activation[1]},{country_activation[2]})")
-    plt.show()

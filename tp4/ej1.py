@@ -32,6 +32,7 @@ ATT_TVLM     = "tvlm"
 CSV_HEADER = [ATT_SEX,ATT_AGE,ATT_CAD_DUR,ATT_CHOLESTE,ATT_SIGDZ,ATT_TVLM]
 
 NUM_VARS = [ATT_AGE,ATT_CAD_DUR,ATT_CHOLESTE]
+NUM_VARS_MINUS_CAD_DUR = [ATT_AGE,ATT_CHOLESTE]
 ALL_VARS = [ATT_SEX,ATT_AGE,ATT_CAD_DUR,ATT_CHOLESTE]
 
 SIGDZ = "sigdz"
@@ -112,12 +113,13 @@ def _compare_hclustering(x: np.array, hclustering: dict):
 def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
     ## KMeans
     log_short("K-Means")
-    km = KMeans(k=kmeans["k"], init_alg=kmeans["init_alg"], seed=seed)
-    it = km.train(x, iterations=kmeans["iterations"], show_loading_bar=kmeans["show_loading_bar"])
-    log(f"Iterations: {it}")
-    log(f"Clusters: {km.clusters}")
-    clustered = km.clusterize(x)
-    print(f"Clustered: {list(map(lambda c: len(c), clustered))}")
+    km = None # to avoid defining yet
+    # km = KMeans(k=kmeans["k"], init_alg=kmeans["init_alg"], seed=seed)
+    # it = km.train(x, iterations=kmeans["iterations"], show_loading_bar=kmeans["show_loading_bar"])
+    # log(f"Iterations: {it}")
+    # log(f"Clusters: {km.clusters}")
+    # clustered = km.clusterize(x)
+    # print(f"Clustered: {list(map(lambda c: len(c), clustered))}")
     # km.plot3d(x, labels=['Age', 'Symptoms Duration', 'Cholesterol'])
     # plt.show()
 
@@ -128,9 +130,9 @@ def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
 
     ## Kohonen
     log_short("Kohonen")
-    ko = None # to avoid defining yet
-    # ko = Kohonen()
-    # ko.train(x)
+    ko = Kohonen(x, grid_dimension=kohonen["grid_dimension"], radius=kohonen["radius"], input_weights=kohonen["input_weights"], learning_rate=kohonen["learning_rate"])
+    ko.train(kohonen["epochs"])
+    plt.show()
 
     return km, hc, ko
 
@@ -247,40 +249,51 @@ def e(x: np.array, y: np.array):
         "iterations":       1000,
         "show_loading_bar": True
     }
+    kohonen={
+        "grid_dimension": 7,
+        "radius": (False, 2),
+        "input_weights": True,
+        "learning_rate": 1,
+        "epochs": 1000
+    }
+    km, hc, ko = unsupervised(
+        std_x, 
+        kmeans=kmeans, 
+        hclustering={
+            "param": "asd"
+        }, 
+        kohonen=kohonen
+    )
 
     # Sick people
-    log_medium("Sick people")
-    sick_idxs = np.argwhere(ry[:] == 1)[:,0]
-    sick_x    = std_x[sick_idxs]
-    log(sick_idxs.shape)
+    # log_medium("Sick people")
+    # sick_idxs = np.argwhere(ry[:] == 1)[:,0]
+    # sick_x    = std_x[sick_idxs]
+    # log(sick_idxs.shape)
     
-    km, hc, ko = unsupervised(
-        sick_x, 
-        kmeans=kmeans, 
-        hclustering={
-            "param": "asd"
-        }, 
-        kohonen={
-            "param": "e"
-        }
-    )
+    # km, hc, ko = unsupervised(
+    #     sick_x, 
+    #     kmeans=kmeans, 
+    #     hclustering={
+    #         "param": "asd"
+    #     }, 
+    #     kohonen=kohonen
+    # )
 
-    # Non sick people
-    log_medium("Non sick people")
-    non_sick_idxs = np.argwhere(ry[:] == 0)[:,0]
-    non_sick_x    = std_x[non_sick_idxs]
-    log(non_sick_x.shape)
+    # # Non sick people
+    # log_medium("Non sick people")
+    # non_sick_idxs = np.argwhere(ry[:] == 0)[:,0]
+    # non_sick_x    = std_x[non_sick_idxs]
+    # log(non_sick_x.shape)
 
-    km, hc, ko = unsupervised(
-        non_sick_x, 
-        kmeans=kmeans, 
-        hclustering={
-            "param": "asd"
-        }, 
-        kohonen={
-            "param": "e"
-        }
-    )
+    # km, hc, ko = unsupervised(
+    #     non_sick_x, 
+    #     kmeans=kmeans, 
+    #     hclustering={
+    #         "param": "asd"
+    #     }, 
+    #     kohonen=kohonen
+    # )
 
 ###### Main ######
 
@@ -297,7 +310,8 @@ if __name__ == '__main__':
 
     x = df[ALL_VARS].to_numpy()
     y = df[ATT_SIGDZ].to_numpy()
-
+    print(f"X SHAPE: {x.shape}")
+    print(f"Y SHAPE: {y.shape}")
     # Exercise a
     log_long("Exercise a")
     # (tr_x, tr_y), (ts_x, ts_y) = a(x, y)
@@ -316,5 +330,5 @@ if __name__ == '__main__':
     
     # Exercise e
     log_long("Exercise e")
-    num_x = df[NUM_VARS].to_numpy()
+    num_x = df[NUM_VARS_MINUS_CAD_DUR].to_numpy()
     e(num_x, y)
