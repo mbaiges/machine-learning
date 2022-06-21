@@ -204,7 +204,7 @@ def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
     ## KMeans
     log_short("K-Means")
     km = None # to avoid defining yet
-    _compare_kmeans_initializations(x, kmeans)
+    # _compare_kmeans_initializations(x, kmeans)
 
     ## Hierarchical Clustering
     log_short("Hierarchical Clustering")
@@ -214,8 +214,8 @@ def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
     ## Kohonen
     log_short("Kohonen")
     ko = Kohonen(x, grid_dimension=kohonen["grid_dimension"], radius=kohonen["radius"], input_weights=kohonen["input_weights"], learning_rate=kohonen["learning_rate"])
-    ko.train(kohonen["epochs"])
-    plt.show()
+    # ko.train(kohonen["epochs"])
+    # plt.show()
 
     return km, hc, ko
 
@@ -434,14 +434,14 @@ if __name__ == '__main__':
     print(f"Y SHAPE: {y.shape}")
     # Exercise a
     log_long("Exercise a")
-    (tr_x, tr_y), (ts_x, ts_y) = a(x, y)
+    # (tr_x, tr_y), (ts_x, ts_y) = a(x, y)
 
     # (best_x_train, best_t_train, best_x_test, best_t_test), error_pctg, max_ = cross_validation(x=df[NUM_VARS].to_numpy(), t=y)
     # print(f"BEST X TEST SHAPE: {best_x_test.shape}")
     # print(f"MAX error is: {max_}")
     # Exercise b
     log_long("Exercise b")
-    logit_res, std_scaler = b(tr_x, tr_y, ts_x, ts_y)
+    # logit_res, std_scaler = b(tr_x, tr_y, ts_x, ts_y)
 
     # Exercise c
     log_long("Exercise c")
