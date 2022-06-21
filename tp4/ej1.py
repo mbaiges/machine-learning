@@ -8,6 +8,7 @@ import statsmodels.api as sm
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (confusion_matrix, 
                            accuracy_score, ConfusionMatrixDisplay)
+import matplotlib.colors as mcl
 import matplotlib.pyplot as plt
 
 import utils
@@ -80,24 +81,48 @@ def analysis(df: pd.DataFrame) -> None:
 
     # Sex
     sexs = df[ATT_SEX].to_numpy()
-    utils.bars(sexs, title=ATT_SEX)
+    utils.bars(sexs, title=f"Variable '{ATT_SEX}'")
 
     # Ages
     ages = df[ATT_AGE].to_numpy()
-    utils.hist(ages, title=ATT_AGE)
+    utils.hist(ages, title=f"Variable '{ATT_AGE}'")
 
     # Symptoms Duration
     durations = df[ATT_CAD_DUR].to_numpy()
-    utils.hist(durations, title=ATT_CAD_DUR) # Poisson? Pienso que tiene sentido
+    utils.hist(durations, title=f"Variable '{ATT_CAD_DUR}'") # Poisson? Pienso que tiene sentido
 
     # Cholesterol
     chols = df[ATT_CHOLESTE].to_numpy()
     filter(lambda c: c is not None, chols) # Filtering None
-    utils.hist(chols, title=ATT_CHOLESTE)
+    utils.hist(chols, title=f"Variable '{ATT_CHOLESTE}'")
 
     # SIGDZ
     sigdz = df[ATT_SIGDZ].to_numpy()
-    utils.bars(sigdz, title=ATT_SIGDZ)
+    utils.bars(sigdz, title=f"Variable '{ATT_SIGDZ}'")
+
+    # Arteries narrowing per sex
+    ## Male
+    sigdz = df[df[ATT_SEX] == 0][ATT_SIGDZ].to_numpy()
+    utils.bars(sigdz, title=f"Variable '{ATT_SIGDZ}', para sexo Masculino")
+
+    ## Female
+    sigdz = df[df[ATT_SEX] == 1][ATT_SIGDZ].to_numpy()
+    utils.bars(sigdz, title=f"Variable '{ATT_SIGDZ}', para sexo Femenino")
+
+def _compare_kmeans_initializations(x: np.array, kmeans: dict):
+    init_algs = ["random", "samples", "distant"]
+    for init_alg in init_algs:
+        km = KMeans(k=kmeans["k"], init_alg=init_alg, seed=seed)
+        it = km.train(x, iterations=kmeans["iterations"], show_loading_bar=kmeans["show_loading_bar"])
+        log(f"Iterations: {it}")
+        log(f"Clusters: {km.clusters}")
+        clustered = km.clusterize(x)
+        print(f"Clustered: {list(map(lambda c: len(c), clustered))}")
+        plt.figure()
+        plt.title(f"K Means ({kmeans['k']}) con inicialización '{init_alg}'")
+        km.plot2d(x, labels=['Edad', 'Colesterol'])
+        # km.plot3d(x, labels=['Age', 'Symptoms Duration', 'Cholesterol'])
+    plt.show()
 
 def _compare_hclustering(x: np.array, hclustering: dict):
     criterias = ['max','min','mean','center']
@@ -105,34 +130,45 @@ def _compare_hclustering(x: np.array, hclustering: dict):
         hc = HClustering(criteria=criteria)
         hc.train(x)
         plt.figure()
-        plt.title(f"Hierarchical Clustering with {criteria} criteria")
+        plt.title(f"Agrupamiento jerárquico con criterio '{criteria}'")
         hc.dendrogram()
     plt.show()
 
+def _e_analysis_plot2d_points(x: np.array, y: np.array, labels: list):
+    colors = list(mcl.TABLEAU_COLORS.values())
+    print(set(y))
+    for val in set(y):
+        l = ">= 75% Estr. Arterial" if val == 1 else "< 75% Estr. Arterial"
+        c = colors[val % len(colors)]
+        idxs = np.argwhere(y[:] == val)[:,0]
+        rx = x[idxs]
+        plt.scatter(rx[:,0], rx[:,1], c=c, label=l, alpha=0.4)
+    plt.legend()
+    plt.xlabel(labels[0])
+    plt.ylabel(labels[1])
+
+def e_analysis(x: np.array, y: np.array, title):
+    plt.figure()
+    plt.title(f"[{title}] Ejemplos de cada clase")
+    _e_analysis_plot2d_points(x, y, labels=["Edad", "Colesterol"])
+    plt.show()
     
 def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
     ## KMeans
     log_short("K-Means")
     km = None # to avoid defining yet
-    # km = KMeans(k=kmeans["k"], init_alg=kmeans["init_alg"], seed=seed)
-    # it = km.train(x, iterations=kmeans["iterations"], show_loading_bar=kmeans["show_loading_bar"])
-    # log(f"Iterations: {it}")
-    # log(f"Clusters: {km.clusters}")
-    # clustered = km.clusterize(x)
-    # print(f"Clustered: {list(map(lambda c: len(c), clustered))}")
-    # km.plot3d(x, labels=['Age', 'Symptoms Duration', 'Cholesterol'])
-    # plt.show()
+    _compare_kmeans_initializations(x, kmeans)
 
     ## Hierarchical Clustering
     log_short("Hierarchical Clustering")
     hc = None # to avoid defining yet
-    _compare_hclustering(x, hclustering)
+    # _compare_hclustering(x, hclustering)
 
     ## Kohonen
     log_short("Kohonen")
     ko = Kohonen(x, grid_dimension=kohonen["grid_dimension"], radius=kohonen["radius"], input_weights=kohonen["input_weights"], learning_rate=kohonen["learning_rate"])
-    ko.train(kohonen["epochs"])
-    plt.show()
+    # ko.train(kohonen["epochs"])
+    # plt.show()
 
     return km, hc, ko
 
@@ -209,7 +245,6 @@ def c(tr_x: np.array, tr_y: np.array, ts_x: np.array, ts_y: np.array):
     log_short("WOMAN")
     w_tr_x, w_tr_y, w_ts_x, w_ts_y = tr_x[tr_not_man_idxs], tr_y[tr_not_man_idxs], ts_x[ts_not_man_idxs], ts_y[ts_not_man_idxs]
     b(w_tr_x, w_tr_y, w_ts_x, w_ts_y)
-    pass
 
 def d(logit_res, std_scaler):
     print(logit_res.summary())
@@ -232,19 +267,18 @@ def d(logit_res, std_scaler):
     # (1 + odds) * p = odds
     p = odds/(1+odds)
     log(f"Probability: {p}")
-
-def e(x: np.array, y: np.array):
     
+def _e(x: np.array, y: np.array, title: str="General"):
+    e_analysis(x, y, title=f"Dataset Completo - {title}")
+
     pctg = 0.4
     n = math.floor(x.shape[0]*pctg)
     rx, ry = random_pick(x, y, n, seed)
-    
 
-    std_scaler  = StandardScaler()
-    std_x       = std_scaler.fit_transform(X=rx)
+    # e_analysis(rx, ry, title=f"Random Subset - {title}")
 
     kmeans = {
-        "k":                3,
+        "k":                4,
         "init_alg":         "distant",
         "iterations":       1000,
         "show_loading_bar": True
@@ -257,7 +291,7 @@ def e(x: np.array, y: np.array):
         "epochs": 1000
     }
     km, hc, ko = unsupervised(
-        std_x, 
+        x, 
         kmeans=kmeans, 
         hclustering={
             "param": "asd"
@@ -295,6 +329,23 @@ def e(x: np.array, y: np.array):
     #     kohonen=kohonen
     # )
 
+def e(df: pd.DataFrame):
+    # Male
+    mx = df[df[ATT_SEX] == 0][NUM_VARS_MINUS_CAD_DUR].to_numpy()
+    my = df[df[ATT_SEX] == 0][ATT_SIGDZ].to_numpy()
+    _e(mx, my, title="Masculino")
+
+    # Female
+    wx = df[df[ATT_SEX] == 1][NUM_VARS_MINUS_CAD_DUR].to_numpy()
+    wy = df[df[ATT_SEX] == 1][ATT_SIGDZ].to_numpy()
+    _e(wx, wy, title="Femenino")
+
+    # General case
+    gx = df[NUM_VARS_MINUS_CAD_DUR].to_numpy()
+    gy = df[ATT_SIGDZ].to_numpy()
+    _e(gx, gy, title="General")
+    
+
 ###### Main ######
 
 if __name__ == '__main__':
@@ -304,7 +355,7 @@ if __name__ == '__main__':
 
     # Analysis
     adf = df.astype(object).replace(np.nan, None)
-    # analysis(adf)
+    analysis(adf)
 
     df = df.dropna().reset_index(drop=True) #TODO: que hacemos con esto, media, neurona, knn
 
@@ -330,5 +381,4 @@ if __name__ == '__main__':
     
     # Exercise e
     log_long("Exercise e")
-    num_x = df[NUM_VARS_MINUS_CAD_DUR].to_numpy()
-    e(num_x, y)
+    e(df)

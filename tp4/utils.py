@@ -67,7 +67,7 @@ def bars(x: np.array, title: str) -> None:
     c = {}
     for e in x:
         c[e] = c.get(e, 0) + 1
-    print(c)
+    print(dict(sorted(c.items())))
     x, y = [], []
     for key, value in sorted(c.items()):
         x.append(key)

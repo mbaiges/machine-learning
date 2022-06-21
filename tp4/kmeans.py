@@ -3,6 +3,7 @@ import random
 import math
 import statsmodels.api as sm
 from sklearn.preprocessing import StandardScaler
+import matplotlib.colors as mcl
 import matplotlib.pyplot as plt
 
 import utils
@@ -139,7 +140,25 @@ class KMeans:
 
     # Plotting
 
+    def plot2d(self, x: np.array, labels: list):    
+        denormalized_cluster_centers = self.std_scaler.inverse_transform(np.array(self.clusters))
 
+        colors = list(mcl.TABLEAU_COLORS.values())
+        print(colors)
+
+        # Clustered points
+        clustered = self.clusterize(x)
+        for idx, c in enumerate(clustered):
+            ci = colors[idx % len(colors)]
+            plt.scatter(c[:,0], c[:,1], c=[ci for i in range(len(c))], alpha=0.4)
+
+        # Clusters centers
+        plt.scatter(denormalized_cluster_centers[:,0], denormalized_cluster_centers[:,1], c=['b' for i in range(denormalized_cluster_centers.shape[0])])
+
+        plt.xlabel(labels[0])
+        plt.ylabel(labels[1])
+
+        pass
 
     def plot3d(self, x: np.array, labels: list):
         denormalized_cluster_centers = self.std_scaler.inverse_transform(np.array(self.clusters))
