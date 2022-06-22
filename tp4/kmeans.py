@@ -140,7 +140,7 @@ class KMeans:
 
     # Plotting
 
-    def plot2d(self, x: np.array, labels: list):    
+    def plot2d(self, x: np.array, labels: list, y: np.array=None):    
         denormalized_cluster_centers = self.std_scaler.inverse_transform(np.array(self.clusters))
 
         colors = list(mcl.TABLEAU_COLORS.values())
@@ -154,6 +154,20 @@ class KMeans:
 
         # Clusters centers
         plt.scatter(denormalized_cluster_centers[:,0], denormalized_cluster_centers[:,1], c=['b' for i in range(denormalized_cluster_centers.shape[0])])
+
+        if y is not None:
+            std_x = self.std_scaler.transform(x)
+            idxs = self._clusterize(std_x)
+            
+            for idx, c in enumerate(denormalized_cluster_centers):
+                count = sum([1 if (y[clustered_idx] == 1) else 0 for clustered_idx in idxs[idx]])
+                pctg = count / len(idxs[idx]) if len(idxs[idx]) > 0 else 0
+
+                plt.text(x=c[0]+0.5, y=c[1]+0.5, s=f'{pctg*100:.0f}%', 
+                    fontdict=dict(color='red',size=10),
+                    bbox=dict(facecolor='yellow',alpha=0.5)
+                )
+
 
         plt.xlabel(labels[0])
         plt.ylabel(labels[1])

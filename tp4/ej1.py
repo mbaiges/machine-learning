@@ -109,20 +109,27 @@ def analysis(df: pd.DataFrame) -> None:
     sigdz = df[df[ATT_SEX] == 1][ATT_SIGDZ].to_numpy()
     utils.bars(sigdz, title=f"Variable '{ATT_SIGDZ}', para sexo Femenino")
 
-def _compare_kmeans_initializations(x: np.array, kmeans: dict):
+def _compare_kmeans_initializations(x: np.array, y: np.array, kmeans: dict):
     init_algs = ["random", "samples", "distant"]
-    for init_alg in init_algs:
-        km = KMeans(k=kmeans["k"], init_alg=init_alg, seed=seed)
-        it = km.train(x, iterations=kmeans["iterations"], show_loading_bar=kmeans["show_loading_bar"])
-        log(f"Iterations: {it}")
-        log(f"Clusters: {km.clusters}")
-        clustered = km.clusterize(x)
-        print(f"Clustered: {list(map(lambda c: len(c), clustered))}")
-        plt.figure()
-        plt.title(f"K Means ({kmeans['k']}) con inicialización '{init_alg}'")
-        km.plot2d(x, labels=['Edad', 'Colesterol'])
-        # km.plot3d(x, labels=['Age', 'Symptoms Duration', 'Cholesterol'])
-    plt.show()
+    ks = [3, 4, 5]
+    for k in ks:
+        for init_alg in init_algs:
+            km = KMeans(k=k, init_alg=init_alg, seed=seed)
+            it = km.train(x, iterations=kmeans["iterations"], show_loading_bar=False)
+            log(f"Iterations: {it}")
+            log(f"Clusters: {km.clusters}")
+            clustered = km.clusterize(x)
+            print(f"Clustered: {list(map(lambda c: len(c), clustered))}")
+            plt.figure()
+            plt.title(f"K Means ({k}) con inicialización '{init_alg}'")
+            km.plot2d(x, labels=['Edad', 'Colesterol'])
+
+            plt.figure()
+            plt.title(f"K Means ({k}) con inicialización '{init_alg}' y porcentajes")
+            km.plot2d(x, labels=['Edad', 'Colesterol'], y=y)
+            # km.plot3d(x, labels=['Age', 'Symptoms Duration', 'Cholesterol'])
+        plt.show()
+    
 
 def cross_validation(x, t, k=20, logit_max_iter=100):
     std_scaler  = StandardScaler()
@@ -173,12 +180,14 @@ def cross_validation(x, t, k=20, logit_max_iter=100):
 
 def _compare_hclustering(x: np.array, hclustering: dict):
     criterias = ['max','min','mean','center']
+    max_clusters = hclustering['max_clusters']
     for criteria in criterias:
         hc = HClustering(criteria=criteria)
         hc.train(x)
-        plt.figure()
-        plt.title(f"Agrupamiento jerárquico con criterio '{criteria}'")
-        hc.dendrogram()
+        for tr in ['none','lastp']:
+            plt.figure()
+            plt.title(f"Agrupamiento jerárquico con criterio '{criteria}'{(' truncado a ' + str(max_clusters) + ' clusters') if tr == 'lastp' else ''}")
+            hc.dendrogram(p=max_clusters, truncate_mode=tr)
     plt.show()
 
 def _e_analysis_plot2d_points(x: np.array, y: np.array, labels: list):
@@ -200,22 +209,22 @@ def e_analysis(x: np.array, y: np.array, title):
     _e_analysis_plot2d_points(x, y, labels=["Edad", "Colesterol"])
     plt.show()
     
-def unsupervised(x: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
+def unsupervised(x: np.array, y: np.array, kmeans: dict, hclustering: dict, kohonen: dict):
     ## KMeans
     log_short("K-Means")
     km = None # to avoid defining yet
-    _compare_kmeans_initializations(x, kmeans)
+    # _compare_kmeans_initializations(x, y, kmeans)
 
     ## Hierarchical Clustering
     log_short("Hierarchical Clustering")
     hc = None # to avoid defining yet
-    _compare_hclustering(x, hclustering)
+    # _compare_hclustering(x, hclustering)
 
     ## Kohonen
     log_short("Kohonen")
     ko = Kohonen(x, grid_dimension=kohonen["grid_dimension"], radius=kohonen["radius"], input_weights=kohonen["input_weights"], learning_rate=kohonen["learning_rate"])
-    ko.train(kohonen["epochs"])
-    plt.show()
+    # ko.train(kohonen["epochs"])
+    # plt.show()
 
     return km, hc, ko
 
@@ -352,6 +361,9 @@ def _e(x: np.array, y: np.array, title: str="General"):
         "iterations":       1000,
         "show_loading_bar": True
     }
+    hclustering = {
+        "max_clusters": 10
+    }
     kohonen={
         "grid_dimension": 7,
         "radius": (False, 2),
@@ -361,10 +373,9 @@ def _e(x: np.array, y: np.array, title: str="General"):
     }
     km, hc, ko = unsupervised(
         x, 
+        y, 
         kmeans=kmeans, 
-        hclustering={
-            "param": "asd"
-        }, 
+        hclustering=hclustering, 
         kohonen=kohonen
     )
 
@@ -400,16 +411,19 @@ def _e(x: np.array, y: np.array, title: str="General"):
 
 def e(df: pd.DataFrame):
     # Male
+    log_medium("MALE")
     mx = df[df[ATT_SEX] == 0][NUM_VARS_MINUS_CAD_DUR].to_numpy()
     my = df[df[ATT_SEX] == 0][ATT_SIGDZ].to_numpy()
     _e(mx, my, title="Masculino")
 
     # Female
+    log_medium("FEMALE")
     wx = df[df[ATT_SEX] == 1][NUM_VARS_MINUS_CAD_DUR].to_numpy()
     wy = df[df[ATT_SEX] == 1][ATT_SIGDZ].to_numpy()
     _e(wx, wy, title="Femenino")
 
     # General case
+    log_medium("BOTH")
     gx = df[NUM_VARS_MINUS_CAD_DUR].to_numpy()
     gy = df[ATT_SIGDZ].to_numpy()
     _e(gx, gy, title="General")
@@ -434,14 +448,14 @@ if __name__ == '__main__':
     print(f"Y SHAPE: {y.shape}")
     # Exercise a
     log_long("Exercise a")
-    (tr_x, tr_y), (ts_x, ts_y) = a(x, y)
+    # (tr_x, tr_y), (ts_x, ts_y) = a(x, y)
 
     # (best_x_train, best_t_train, best_x_test, best_t_test), error_pctg, max_ = cross_validation(x=df[NUM_VARS].to_numpy(), t=y)
     # print(f"BEST X TEST SHAPE: {best_x_test.shape}")
     # print(f"MAX error is: {max_}")
     # Exercise b
     log_long("Exercise b")
-    logit_res, std_scaler = b(tr_x, tr_y, ts_x, ts_y)
+    # logit_res, std_scaler = b(tr_x, tr_y, ts_x, ts_y)
 
     # Exercise c
     log_long("Exercise c")
